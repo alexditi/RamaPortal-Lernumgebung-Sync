@@ -181,4 +181,4 @@ else:
     print("Anmeldung erfolgreich!")
 
     syncLU()
-    print(error_log, "asasd")
+    print(error_log)
