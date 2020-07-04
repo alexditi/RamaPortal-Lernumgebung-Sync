@@ -50,12 +50,10 @@ def download_file(file, dir_string):
 
     # noinspection PyBroadException
     try:
+        resp = s.get(url + "/edu/edufile.php?id=" + file.get("id") + "&download=1")
         ext = file.get("typ")
         # sort out non standard files
-        if ext == "html":
-            # text document
-            pass
-        elif ext == "handschriftl Notiz":
+        if ext == "handschriftl Notiz":
             # not yet implemented TODO
             pass
         elif ext == "tabellenkalkulation":
@@ -84,12 +82,11 @@ def download_file(file, dir_string):
             pass
         else:
             # ext is a valid file extension
-            resp = s.get(url + "/edu/edufile.php?id=" + file.get("id") + "&download=1")
-            file = open(dir_string + "/" + file.get("name") + "." + ext, "wb+")
-            file.write(resp.content)
-            file.close()
+            s_file = open(dir_string + "/" + file.get("name") + "." + ext, "wb+")
+            s_file.write(resp.content)
+            s_file.close()
     except Exception as ex:
-        error_log.append("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file)
+        error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
 
 
 def get_material_list(href):
@@ -181,4 +178,5 @@ else:
     print("Anmeldung erfolgreich!")
 
     syncLU()
-    print(error_log)
+    for error in error_log:
+        print(error)
