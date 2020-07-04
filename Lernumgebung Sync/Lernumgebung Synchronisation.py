@@ -20,7 +20,13 @@ except FileNotFoundError:
         pass
     # create file
     userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
-    json.dump({"username": "", "password": "", "dir": ""}, userdata_creator)
+
+    # get input data!
+    username = input("Benutzername: ")
+    password = input("Passwort: ")
+    i_dir = input("Verzeichnis für LU Sync: ")
+
+    json.dump({"username": username, "password": password, "dir": i_dir}, userdata_creator)
     userdata_creator.close()
     del userdata_creator
     # open reader
