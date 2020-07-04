@@ -54,31 +54,37 @@ def download_file(file, dir_string):
         ext = file.get("typ")
         # sort out non standard files
         if ext == "handschriftl Notiz":
-            # not yet implemented TODO
+            # not yet implemented
             pass
         elif ext == "tabellenkalkulation":
-            # not yet implemented TODO
+            # not yet implemented
             pass
         elif ext == "embedded link":
-            # not yet implemented TODO
+            # not yet implemented
             pass
         elif ext == "img":
             # image
-            pass
+            s_file = open(dir_string + "/" + file.get("name") + ".jpg", "wb+")
+            s_file.write(resp.content)
+            s_file.close()
         elif ext == "audio":
-            # not yet implemented TODO
+            # not yet implemented
             pass
         elif ext == "ytb":
             # youtube link
-            pass
+            s_file = open(dir_string + "/" + file.get("name") + ".url", "w+")
+            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\n")
+            s_file.write("Prop3=19,11\n[InternetShortcut]\nIDList=\n")
+            s_file.write("URL=https://www.youtube.com/watch?v=" + resp.text)
+            s_file.close()
         elif ext == "video":
-            # not yet implemented TODO
+            # not yet implemented
             pass
         elif ext == "test":
-            # not yet implemented TODO
+            # not yet implemented
             pass
         elif ext == "PhET simulation":
-            # not yet implemented TODO
+            # not yet implemented
             pass
         else:
             # ext is a valid file extension
