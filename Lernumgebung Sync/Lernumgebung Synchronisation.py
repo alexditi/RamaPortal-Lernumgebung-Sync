@@ -182,4 +182,4 @@ else:
 
     syncLU()
     print(error_log)
-    print("newline added")
+    print("newline added at the end")
