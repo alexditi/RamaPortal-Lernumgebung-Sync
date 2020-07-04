@@ -122,56 +122,54 @@ def syncLU():
     mk_dir(LU_dir)
 
     while i < len(groupList):
-        print(groupList[i], groupList[i + 1])
+        for sect, dir_sa in [("publ", "Öffentlich"), ("priv", "Privat")]:
+            print(groupList[i], groupList[i + 1], dir_sa)
 
-        dir_string = LU_dir + "/" + groupList[i]
-        mk_dir(dir_string)
+            # access main directory, create folder
+            current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=" + sect)
+            dir_string = LU_dir + "/" + groupList[i]
+            mk_dir(dir_string)
+            dir_string += "/" + dir_sa
+            mk_dir(dir_string)
 
-        # public section
+            n = 0
+            while True:
+                try:
+                    # update current_file
+                    dir_stack.put((current_material_list, n))
+                    current_file = current_material_list[n]
 
-        # access main directory, create folder
-        current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=publ")
-        dir_string += "/Öffentlich"
-        mk_dir(dir_string)
+                    # parsing key "name" to conform w10 path decoding
+                    file_name = current_file.get("name").replace("/", " ").replace("\\", "").replace(
+                        ":", " ").replace("*", " ").replace("?", " ").replace('"', " ").replace("<", " ").replace(
+                        ">", "").replace("|", "")
+                    while file_name[len(file_name) - 1] == " ":
+                        file_name = file_name[:-1]
+                    current_file.update({"name": file_name})
 
-        n = 0
-        while True:
-            try:
-                # update current_file
-                dir_stack.put((current_material_list, n))
-                current_file = current_material_list[n]
-
-                # parsing key "name" to conform w10 path decoding
-                file_name = current_file.get("name").replace("/", " ").replace("\\", "").replace(
-                    ":", " ").replace("*", " ").replace("?", " ").replace('"', " ").replace("<", " ").replace(
-                    ">", "").replace("|", "")
-                while file_name[len(file_name) - 1] == " ":
-                    file_name = file_name[:-1]
-                current_file.update({"name": file_name})
-
-                if current_file.get("typ") == "dir":
-                    # directory
-                    dir_string += "/" + current_file.get("name")
-                    mk_dir(dir_string)
-                    current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=publ&dir=" + current_file.get("id"))
-                    n = 0
-                    print("changed dir to", current_file.get("name"))
-                else:
-                    # file
+                    if current_file.get("typ") == "dir":
+                        # directory
+                        dir_string += "/" + current_file.get("name")
+                        mk_dir(dir_string)
+                        current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=publ&dir=" + current_file.get("id"))
+                        n = 0
+                        print("changed dir to", current_file.get("name"))
+                    else:
+                        # file
+                        dir_stack.get()
+                        download_file(current_file, dir_string)
+                except IndexError:
+                    # end of current materialList
                     dir_stack.get()
-                    download_file(current_file, dir_string)
-            except IndexError:
-                # end of current materialList
-                dir_stack.get()
 
-                # return to prev directory
-                if not dir_stack.empty():
-                    dir_string = dir_string[:-(dir_string[::-1].find("/") + 1)]
-                    current_material_list, n = dir_stack.get()
-                # end of main directory
-                else:
-                    break
-            n += 1
+                    # return to prev directory
+                    if not dir_stack.empty():
+                        dir_string = dir_string[:-(dir_string[::-1].find("/") + 1)]
+                        current_material_list, n = dir_stack.get()
+                    # end of main directory
+                    else:
+                        break
+                n += 1
 
         i += 2
 
