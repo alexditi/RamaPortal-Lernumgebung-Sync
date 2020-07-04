@@ -23,5 +23,5 @@ Um diese auszuführen, müssen folgende Schritte erfolgen (Windows):
    * `pip install requests`
 6. Python sollte nun installiert  und die .py Datei per Doppelklick ausführbar sein
 
-Für andere Betreibssysteme müssen Python sowie und die Zusatzbibliotheken `beautifulsoup4` und `requests` installiert
+Für andere Betriebssysteme müssen Python sowie und die Zusatzbibliotheken `beautifulsoup4` und `requests` installiert
 sein (ebenso über pip und die o.g. Befehle möglich)
