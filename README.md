@@ -17,7 +17,7 @@ Um diese auszuführen, müssen folgende Schritte erfolgen (Windows):
 1. [Python Interpreter](https://www.python.org/downloads/ "Zum Python Download") herunterladen und ausführen
 2. Checkbox "Add Python to PATH" auswählen
 3. Install Now auswählen
-4. CMD oder Powershell öffnen (Kann in der Windows Suche geöffnet werden)
+4. CMD (Eingabeaufforderung) oder Powershell öffnen (Kann in der Windows Suche geöffnet werden)
 3. "Install Now" auswählen
 4. CMD oder Powershell öffnen (Kann in der Windows Suche geöffnet werden)
 5. Folgende 2 Befehle eingeben und ausführen:
