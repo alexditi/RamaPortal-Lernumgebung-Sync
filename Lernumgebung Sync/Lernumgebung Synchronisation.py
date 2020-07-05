@@ -3,40 +3,37 @@ import os
 import json
 from bs4 import BeautifulSoup
 from queue import LifoQueue
+from tkinter import *
 
+
+# some global variables
 tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
 url = "https://portal.rama-mainz.de"
 s = requests.Session()
 error_log = []
+userdata_reader = ""
+userdata = {}
+LU_dir = ""
 
-try:
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
-except FileNotFoundError:
-    # non existing dir or file
-    try:
-        # create dir
-        os.mkdir(tmpdir)
-    except FileExistsError:
-        pass
-    # create file
+# color scheme
+bg_color = "#282828"
+font_color = "light grey"
+rama_color = "#A51320"
+rama_color_active = "#9E1220"
+
+
+def create_userdata_file(username, password, file_path):
+    global userdata_reader, userdata, LU_dir
     userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
-
-    # get input data!
-    username = input("Benutzername: ")
-    password = input("Passwort: ")
-    i_dir = input("Verzeichnis für LU Sync: ")
-
-    json.dump({"username": username, "password": password, "dir": i_dir}, userdata_creator)
+    json.dump({"username": username, "password": password, "dir": file_path}, userdata_creator)
     userdata_creator.close()
     del userdata_creator
     # open reader
     userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
-
-userdata = json.load(userdata_reader)
-userdata_reader.close()
-del userdata_reader
-
-LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
+    userdata = json.load(userdata_reader)
+    userdata_reader.close()
+    del userdata_reader
+    LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
 
 
 def mk_dir(path):
@@ -181,12 +178,46 @@ def syncLU():
 
 
 # quick login
-if BeautifulSoup(s.post(url + "/index.php", {"txtBenutzer": userdata.get("username"), "txtKennwort": userdata.get(
-        "password")}).text, features="html.parser").text.find("angemeldet als") == -1:
-    print("Anmeldung fehlgeschlagen")
-else:
-    print("Anmeldung erfolgreich!")
+# if BeautifulSoup(s.post(url + "/index.php", {"txtBenutzer": userdata.get("username"), "txtKennwort": userdata.get(
+#         "password")}).text, features="html.parser").text.find("angemeldet als") == -1:
+#     print("Anmeldung fehlgeschlagen")
+# else:
+#     print("Anmeldung erfolgreich!")
+#
+#     syncLU()
+#     for error in error_log:
+#        print(error)
 
-    syncLU()
-    for error in error_log:
-        print(error)
+
+root = Tk()
+root.wm_title("Lernumgebung Synchronisation")
+root.wm_minsize(300, 300)
+root.wm_maxsize(300, 300)
+
+# main Frame
+main_frame = Frame(root, bg=bg_color)
+
+# userdata Frame
+userdata_frame = Frame(root, bg=rama_color)
+
+
+# try parsing userdata from existing userdata file
+try:
+    # existing userdata file
+    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
+    userdata = json.load(userdata_reader)
+    userdata_reader.close()
+    del userdata_reader
+    LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
+    main_frame.pack(expand=True, fill=BOTH)
+except FileNotFoundError:
+    # non existing dir or file
+    try:
+        # create dir
+        os.mkdir(tmpdir)
+    except FileExistsError:
+        pass
+    # show enter userdata screen
+    userdata_frame.pack(expand=True, fill=BOTH)
+
+root.mainloop()
