@@ -28,7 +28,7 @@ def check_login():
             "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
 
 
-def create_userdata_file(event=""):
+def submit_userdata(event=""):
     global userdata_reader, userdata, LU_dir
     userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
     json.dump({"username": username_entry.get(), "password": password_entry.get(), "dir": dir_entry.get()}, userdata_creator)
@@ -52,6 +52,17 @@ def create_userdata_file(event=""):
 def insert_dir():
     dir_entry.delete(0, END)
     dir_entry.insert(0, filedialog.askdirectory())
+
+
+def show_settings():
+    main_frame.pack_forget()
+    username_entry.delete(0, END)
+    password_entry.delete(0, END)
+    dir_entry.delete(0, END)
+    username_entry.insert(0, userdata.get("username"))
+    password_entry.insert(0, userdata.get("password"))
+    dir_entry.insert(0, userdata.get("dir"))
+    userdata_frame.pack(expand=True, fill=BOTH)
 
 
 def mk_dir(path):
@@ -195,25 +206,15 @@ def syncLU():
         i += 2
 
 
-# quick login
-# if BeautifulSoup(s.post(url + "/index.php", {"txtBenutzer": userdata.get("username"), "txtKennwort": userdata.get(
-#         "password")}).text, features="html.parser").text.find("angemeldet als") == -1:
-#     print("Anmeldung fehlgeschlagen")
-# else:
-#     print("Anmeldung erfolgreich!")
-#
-#     syncLU()
-#     for error in error_log:
-#        print(error)
-
-
 root = Tk()
-root.wm_title("Lernumgebung Synchronisation")
+root.wm_title("LU Synchronisation")
 root.wm_minsize(300, 300)
 root.wm_maxsize(300, 300)
 
 # main Frame
 main_frame = Frame(root, bg=bg_color)
+Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Einstellungen", font="Helvetia 16 bold", command=show_settings, relief=FLAT).pack(anchor=S, fill=X, pady=10, padx=8)
+Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=None, relief=FLAT).pack(anchor=S, fill=X, pady=10, padx=8)
 
 # userdata Frame
 userdata_frame = Frame(root, bg=bg_color)
@@ -226,10 +227,15 @@ password_entry.pack(fill=X, anchor=N, padx=8)
 Label(userdata_frame, bg=bg_color, fg=font_color, text="Synchronisationspfad", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
 dir_frame = Frame(userdata_frame, bg=bg_color)
 dir_entry = Entry(dir_frame, bg=bg_color, fg=font_color, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
-Button(dir_frame, fg=rama_color, activeforeground=rama_color_active, bg=bg_color, activebackground=bg_color, text="||", font="Helvetia 16 bold", relief=FLAT, command=insert_dir).pack(side=RIGHT)
+browse_btn = Button(dir_frame, fg=rama_color, activeforeground=rama_color_active, bg=bg_color, activebackground=bg_color, text="||", font="Helvetia 16 bold", relief=FLAT, command=insert_dir)
+browse_btn.pack(side=RIGHT)
 dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
-Button(userdata_frame, fg="black", bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=create_userdata_file).pack(fill=X, anchor=N, padx=30, pady=10)
+Button(userdata_frame, fg=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_userdata).pack(fill=X, anchor=N, padx=30, pady=10)
+username_entry.bind("<Return>", submit_userdata)
+password_entry.bind("<Return>", submit_userdata)
+dir_entry.bind("Return", submit_userdata)
+browse_btn.bind("<Return>", submit_userdata)
 
 
 # try parsing userdata from existing userdata file
@@ -259,3 +265,7 @@ except (FileNotFoundError, json.decoder.JSONDecodeError):
     userdata_frame.pack(expand=True, fill=BOTH)
 
 root.mainloop()
+
+# TODO implement sync LU method execution
+# TODO implement Progress Bar for classes
+# TODO implement options for deleting the folder before download
