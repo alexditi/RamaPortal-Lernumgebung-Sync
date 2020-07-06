@@ -4,6 +4,7 @@ import json
 from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
+from tkinter import messagebox, filedialog
 
 
 # some global variables
@@ -15,17 +16,22 @@ userdata_reader = ""
 userdata = {}
 LU_dir = ""
 
-# color scheme
+# color variables
 bg_color = "#282828"
 font_color = "light grey"
 rama_color = "#A51320"
 rama_color_active = "#9E1220"
 
 
-def create_userdata_file(username, password, file_path):
+def check_login():
+    return not (BeautifulSoup(s.post(url + "/index.php", {"txtBenutzer": userdata.get("username"), "txtKennwort": userdata.get(
+            "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
+
+
+def create_userdata_file(event=""):
     global userdata_reader, userdata, LU_dir
     userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
-    json.dump({"username": username, "password": password, "dir": file_path}, userdata_creator)
+    json.dump({"username": username_entry.get(), "password": password_entry.get(), "dir": dir_entry.get()}, userdata_creator)
     userdata_creator.close()
     del userdata_creator
     # open reader
@@ -34,6 +40,18 @@ def create_userdata_file(username, password, file_path):
     userdata_reader.close()
     del userdata_reader
     LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
+    if check_login():
+        userdata_frame.pack_forget()
+        main_frame.pack(expand=True, fill=BOTH)
+    else:
+        username_entry.delete(0, END)
+        password_entry.delete(0, END)
+        messagebox.showerror("Anmeldung fehlgeschlagen!", "Falscher Benutzername oder Passwort")
+
+
+def insert_dir():
+    dir_entry.delete(0, END)
+    dir_entry.insert(0, filedialog.askdirectory())
 
 
 def mk_dir(path):
@@ -198,20 +216,40 @@ root.wm_maxsize(300, 300)
 main_frame = Frame(root, bg=bg_color)
 
 # userdata Frame
-userdata_frame = Frame(root, bg=rama_color)
+userdata_frame = Frame(root, bg=bg_color)
+Label(userdata_frame, bg=bg_color, fg=font_color, text="Benutzername", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
+username_entry = Entry(userdata_frame, bg=bg_color, fg=font_color, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
+username_entry.pack(fill=X, anchor=N, padx=8)
+Label(userdata_frame, bg=bg_color, fg=font_color, text="Passwort", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
+password_entry = Entry(userdata_frame, bg=bg_color, fg=font_color, font="Helvetia 16", show="*", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
+password_entry.pack(fill=X, anchor=N, padx=8)
+Label(userdata_frame, bg=bg_color, fg=font_color, text="Synchronisationspfad", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
+dir_frame = Frame(userdata_frame, bg=bg_color)
+dir_entry = Entry(dir_frame, bg=bg_color, fg=font_color, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
+Button(dir_frame, fg=rama_color, activeforeground=rama_color_active, bg=bg_color, activebackground=bg_color, text="||", font="Helvetia 16 bold", relief=FLAT, command=insert_dir).pack(side=RIGHT)
+dir_entry.pack(fill=X, side=LEFT)
+dir_frame.pack(fill=X, anchor=N, padx=8)
+Button(userdata_frame, fg="black", bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=create_userdata_file).pack(fill=X, anchor=N, padx=30, pady=10)
 
 
 # try parsing userdata from existing userdata file
+# existing userdata file
 try:
-    # existing userdata file
     userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
     userdata = json.load(userdata_reader)
     userdata_reader.close()
     del userdata_reader
     LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
-    main_frame.pack(expand=True, fill=BOTH)
-except FileNotFoundError:
-    # non existing dir or file
+
+    # check for wrong login data
+    if not check_login():
+        dir_entry.insert(0, userdata.get("dir"))
+        userdata_frame.pack(expand=True, fill=BOTH)
+    else:
+        main_frame.pack(expand=True, fill=BOTH)
+
+# non existing dir or file, incorrect userdata file
+except (FileNotFoundError, json.decoder.JSONDecodeError):
     try:
         # create dir
         os.mkdir(tmpdir)
