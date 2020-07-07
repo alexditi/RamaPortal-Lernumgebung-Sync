@@ -7,6 +7,35 @@ from tkinter import *
 from tkinter import messagebox, filedialog
 
 
+# tooltip class
+class ToolTip(object):
+
+    def __init__(self, widget, text):
+        self.text = text
+        self.widget = widget
+        self.tipwindow = None
+        self.x = self.y = 0
+        self.widget.bind("<Enter>", self.showtip)
+        self.widget.bind("<Leave>", self.hidetip)
+
+    def showtip(self, event):
+        if self.tipwindow or not self.text:
+            return
+        x = self.widget.winfo_rootx() + 37
+        y = self.widget.winfo_rooty() + 27
+        self.tipwindow = tw = Toplevel(self.widget)
+        tw.wm_overrideredirect(1)
+        tw.wm_geometry("+%d+%d" % (x, y))
+        label = Label(tw, text=self.text, justify=LEFT, background="#ffffe0", relief=SOLID, borderwidth=1, font="Helvetia 8")
+        label.pack(ipadx=1)
+
+    def hidetip(self, event):
+        tw = self.tipwindow
+        self.tipwindow = None
+        if tw:
+            tw.destroy()
+
+
 # some global variables
 tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
 url = "https://portal.rama-mainz.de"
@@ -15,6 +44,7 @@ error_log = []
 userdata_reader = ""
 userdata = {}
 LU_dir = ""
+show_password = False
 
 # color variables
 bg_color = "#282828"
@@ -63,6 +93,15 @@ def show_settings():
     password_entry.insert(0, userdata.get("password"))
     dir_entry.insert(0, userdata.get("dir"))
     userdata_frame.pack(expand=True, fill=BOTH)
+
+
+def toggle_show_password():
+    global show_password
+    if show_password:
+        password_entry.config(show="*")
+    else:
+        password_entry.config(show="")
+    show_password = not show_password
 
 
 def mk_dir(path):
@@ -222,16 +261,22 @@ Label(userdata_frame, bg=bg_color, fg=font_color, text="Benutzername", font="Hel
 username_entry = Entry(userdata_frame, bg=bg_color, fg=font_color, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
 username_entry.pack(fill=X, anchor=N, padx=8)
 Label(userdata_frame, bg=bg_color, fg=font_color, text="Passwort", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
-password_entry = Entry(userdata_frame, bg=bg_color, fg=font_color, font="Helvetia 16", show="*", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
-password_entry.pack(fill=X, anchor=N, padx=8)
+password_frame = Frame(userdata_frame, bg=bg_color)
+password_entry = Entry(password_frame, bg=bg_color, fg=font_color, font="Helvetia 16", show="*", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
+show_password_btn = Button(password_frame, text="O", font="Helveita 16 bold", bg=bg_color, activebackground=bg_color, fg=rama_color, activeforeground=rama_color_active, relief=FLAT, width=2, command=toggle_show_password)
+ToolTip(show_password_btn, "Passwort anzeigen")
+show_password_btn.pack(side=RIGHT)
+password_entry.pack(fill=X, side=LEFT)
+password_frame.pack(fill=X, anchor=N, padx=8)
 Label(userdata_frame, bg=bg_color, fg=font_color, text="Synchronisationspfad", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
 dir_frame = Frame(userdata_frame, bg=bg_color)
 dir_entry = Entry(dir_frame, bg=bg_color, fg=font_color, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
 browse_btn = Button(dir_frame, fg=rama_color, activeforeground=rama_color_active, bg=bg_color, activebackground=bg_color, text="||", font="Helvetia 16 bold", relief=FLAT, command=insert_dir)
+ToolTip(browse_btn, "Ordner auswählen")
 browse_btn.pack(side=RIGHT)
 dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
-Button(userdata_frame, fg=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_userdata).pack(fill=X, anchor=N, padx=30, pady=10)
+Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_userdata).pack(fill=X, anchor=N, padx=30, pady=10)
 username_entry.bind("<Return>", submit_userdata)
 password_entry.bind("<Return>", submit_userdata)
 dir_entry.bind("Return", submit_userdata)
