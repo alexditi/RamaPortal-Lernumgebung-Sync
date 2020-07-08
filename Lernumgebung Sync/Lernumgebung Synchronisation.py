@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
 from tkinter import messagebox, filedialog
+from threading import Thread
 
 
 # tooltip class
@@ -176,6 +177,9 @@ def get_material_list(href):
 def syncLU():
     global error_log
 
+    settings_btn.config(state=DISABLED)
+    sync_btn.config(state=DISABLED)
+
     # noinspection PyBroadException
     try:
         # get groups
@@ -252,14 +256,22 @@ def syncLU():
 
             i += 2
     except Exception as ex:
-        error_log.append("Anderweitige Fehlermeldung: ", ex, str(ex.__traceback__))
+        error_log.append(("Anderweitige Fehlermeldung: ", ex, str(ex.__traceback__)))
 
     print("Finished with", len(error_log), "errors")
+    error_log_file = open(LU_dir + "/ErrorLog.txt", "w+")
     for error in error_log:
         print(error)
+        error_log_file.write(str(error) + "\n")
+    error_log_file.close()
 
     progress_label.config(text="Fertig!")
-    info_label.config(text="")
+    e_msg = "Synchronisation mit " + str(len(error_log)) + " Fehlermeldungen abgeschlossen."
+    if len(error_log) > 0:
+        e_msg += " Siehe ErrorLog.txt für weitere Informationen."
+    info_label.config(text=e_msg)
+    settings_btn.config(state=NORMAL)
+    sync_btn.config(state=NORMAL)
 
 
 root = Tk()
@@ -269,8 +281,10 @@ root.wm_maxsize(300, 300)
 
 # main Frame
 main_frame = Frame(root, bg=bg_color)
-Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Einstellungen", font="Helvetia 16 bold", command=show_settings, relief=FLAT).pack(anchor=S, fill=X, pady=10, padx=8)
-Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=syncLU, relief=FLAT).pack(anchor=S, fill=X, pady=10, padx=8)
+settings_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Einstellungen", font="Helvetia 16 bold", command=show_settings, relief=FLAT)
+settings_btn.pack(anchor=S, fill=X, pady=10, padx=8)
+sync_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=lambda: Thread(target=syncLU).start(), relief=FLAT)
+sync_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 sync_frame = Frame(main_frame, bg=rama_color, width=250, height=150)
 sync_frame.pack_propagate(0)
 progress_label = Label(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 14 bold", text="")
