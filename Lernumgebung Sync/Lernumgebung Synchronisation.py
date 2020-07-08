@@ -176,73 +176,90 @@ def get_material_list(href):
 def syncLU():
     global error_log
 
-    # get groups
-    resp = s.get(url + "/edu/edumain.php").text
-    groupList = list()
-    groupmanager = resp[resp.find("class='flist'"):resp.find("class='mlist'")]
-    groupmanager = groupmanager.replace("class='flist' ", "")
-    while groupmanager.find("gruppe") != -1:
-        groupList.append(groupmanager[groupmanager.find("title='") + 7:groupmanager.find("class='felem'") - 7])
-        groupmanager = groupmanager.replace("title=", "", 1).replace("class='felem'", "", 1)
-        groupList.append(groupmanager[groupmanager.find("gruppe=") + 7:groupmanager.find("&section")])
-        groupmanager = groupmanager.replace("gruppe=", "", 1).replace("&section", "", 1)
+    # noinspection PyBroadException
+    try:
+        # get groups
+        resp = s.get(url + "/edu/edumain.php").text
+        groupList = list()
+        groupmanager = resp[resp.find("class='flist'"):resp.find("class='mlist'")]
+        groupmanager = groupmanager.replace("class='flist' ", "")
+        while groupmanager.find("gruppe") != -1:
+            groupList.append(groupmanager[groupmanager.find("title='") + 7:groupmanager.find("class='felem'") - 7])
+            groupmanager = groupmanager.replace("title=", "", 1).replace("class='felem'", "", 1)
+            groupList.append(groupmanager[groupmanager.find("gruppe=") + 7:groupmanager.find("&section")])
+            groupmanager = groupmanager.replace("gruppe=", "", 1).replace("&section", "", 1)
 
-    # get each group's file directory
-    i = 0
-    dir_stack = LifoQueue()
-    mk_dir(LU_dir)
+        # get each group's file directory
+        i = 0
+        dir_stack = LifoQueue()
+        mk_dir(LU_dir)
 
-    while i < len(groupList):
-        for sect, dir_sa in [("publ", "Öffentlich"), ("priv", "Privat")]:
-            print(groupList[i], groupList[i + 1], dir_sa)
+        while i < len(groupList):
+            for sect, dir_sa in [("publ", "Öffentlich"), ("priv", "Privat")]:
+                print(groupList[i], groupList[i + 1], dir_sa)
+                progress_label.config(text=groupList[i] + " (" + str(int(i / 2)) + "/" + str(int(len(groupList) / 2)) + ")")
+                root.update_idletasks()
 
-            # access main directory, create folder
-            current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=" + sect)
-            dir_string = LU_dir + "/" + groupList[i]
-            mk_dir(dir_string)
-            dir_string += "/" + dir_sa
-            mk_dir(dir_string)
+                # access main directory, create folder
+                current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=" + sect)
+                dir_string = LU_dir + "/" + groupList[i]
+                mk_dir(dir_string)
+                dir_string += "/" + dir_sa
+                mk_dir(dir_string)
 
-            n = 0
-            while True:
-                try:
-                    # update current_file
-                    dir_stack.put((current_material_list, n))
-                    current_file = current_material_list[n]
+                n = 0
+                while True:
+                    try:
+                        # update current_file
+                        dir_stack.put((current_material_list, n))
+                        current_file = current_material_list[n]
 
-                    # parsing key "name" to conform w10 path decoding
-                    file_name = current_file.get("name").replace("/", " ").replace("\\", "").replace(
-                        ":", " ").replace("*", " ").replace("?", " ").replace('"', " ").replace("<", " ").replace(
-                        ">", "").replace("|", "")
-                    while file_name[len(file_name) - 1] == " ":
-                        file_name = file_name[:-1]
-                    current_file.update({"name": file_name})
+                        # parsing key "name" to conform w10 path decoding
+                        file_name = current_file.get("name").replace("/", " ").replace("\\", "").replace(
+                            ":", " ").replace("*", " ").replace("?", " ").replace('"', " ").replace("<", " ").replace(
+                            ">", "").replace("|", "")
+                        while file_name[len(file_name) - 1] == " ":
+                            file_name = file_name[:-1]
+                        current_file.update({"name": file_name})
 
-                    if current_file.get("typ") == "dir":
-                        # directory
-                        dir_string += "/" + current_file.get("name")
-                        mk_dir(dir_string)
-                        current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=publ&dir=" + current_file.get("id"))
-                        n = 0
-                        print("changed dir to", current_file.get("name"))
-                    else:
-                        # file
+                        if current_file.get("typ") == "dir":
+                            # directory
+                            dir_string += "/" + current_file.get("name")
+                            mk_dir(dir_string)
+                            current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=publ&dir=" + current_file.get("id"))
+                            n = 0
+                            print("changed dir to", current_file.get("name"))
+                            info_label.config(text=current_file.get("name"))
+                            root.update_idletasks()
+                        else:
+                            # file
+                            dir_stack.get()
+                            info_label.config(text=current_file.get("name"))
+                            root.update_idletasks()
+                            download_file(current_file, dir_string)
+                    except IndexError:
+                        # end of current materialList
                         dir_stack.get()
-                        download_file(current_file, dir_string)
-                except IndexError:
-                    # end of current materialList
-                    dir_stack.get()
 
-                    # return to prev directory
-                    if not dir_stack.empty():
-                        dir_string = dir_string[:-(dir_string[::-1].find("/") + 1)]
-                        current_material_list, n = dir_stack.get()
-                    # end of main directory
-                    else:
-                        break
-                n += 1
+                        # return to prev directory
+                        if not dir_stack.empty():
+                            dir_string = dir_string[:-(dir_string[::-1].find("/") + 1)]
+                            current_material_list, n = dir_stack.get()
+                        # end of main directory
+                        else:
+                            break
+                    n += 1
 
-        i += 2
+            i += 2
+    except Exception as ex:
+        error_log.append("Anderweitige Fehlermeldung: ", ex, str(ex.__traceback__))
+
+    print("Finished with", len(error_log), "errors")
+    for error in error_log:
+        print(error)
+
+    progress_label.config(text="Fertig!")
+    info_label.config(text="")
 
 
 root = Tk()
@@ -253,7 +270,14 @@ root.wm_maxsize(300, 300)
 # main Frame
 main_frame = Frame(root, bg=bg_color)
 Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Einstellungen", font="Helvetia 16 bold", command=show_settings, relief=FLAT).pack(anchor=S, fill=X, pady=10, padx=8)
-Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=None, relief=FLAT).pack(anchor=S, fill=X, pady=10, padx=8)
+Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=syncLU, relief=FLAT).pack(anchor=S, fill=X, pady=10, padx=8)
+sync_frame = Frame(main_frame, bg=rama_color, width=250, height=150)
+sync_frame.pack_propagate(0)
+progress_label = Label(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 14 bold", text="")
+progress_label.pack(fill=X)
+info_label = Message(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 10", text="")
+info_label.pack(fill=BOTH, expand=True)
+sync_frame.pack(side=TOP, pady=30)
 
 # userdata Frame
 userdata_frame = Frame(root, bg=bg_color)
@@ -311,6 +335,4 @@ except (FileNotFoundError, json.decoder.JSONDecodeError):
 
 root.mainloop()
 
-# TODO implement sync LU method execution
-# TODO implement Progress Bar for classes
 # TODO implement options for deleting the folder before download
