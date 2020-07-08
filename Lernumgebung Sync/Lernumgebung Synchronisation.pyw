@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import shutil
 from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
@@ -37,6 +38,13 @@ class ToolTip(object):
             tw.destroy()
 
 
+# initialize Tkinter root
+root = Tk()
+root.wm_title("LU Synchronisation")
+root.wm_minsize(300, 300)
+root.wm_maxsize(300, 300)
+
+
 # some global variables
 tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
 url = "https://portal.rama-mainz.de"
@@ -46,6 +54,7 @@ userdata_reader = ""
 userdata = {}
 LU_dir = ""
 show_password = False
+delete_before_sync = BooleanVar()
 
 # color variables
 bg_color = "#282828"
@@ -176,9 +185,14 @@ def get_material_list(href):
 
 def syncLU():
     global error_log
+    error_log = []
 
     settings_btn.config(state=DISABLED)
     sync_btn.config(state=DISABLED)
+    delete_cb.config(state=DISABLED)
+
+    if delete_before_sync.get():
+        shutil.rmtree(LU_dir)
 
     # noinspection PyBroadException
     try:
@@ -272,12 +286,8 @@ def syncLU():
     info_label.config(text=e_msg)
     settings_btn.config(state=NORMAL)
     sync_btn.config(state=NORMAL)
+    delete_cb.config(state=NORMAL)
 
-
-root = Tk()
-root.wm_title("LU Synchronisation")
-root.wm_minsize(300, 300)
-root.wm_maxsize(300, 300)
 
 # main Frame
 main_frame = Frame(root, bg=bg_color)
@@ -286,7 +296,8 @@ settings_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 sync_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=lambda: Thread(target=syncLU).start(), relief=FLAT)
 sync_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 cb_frame = Frame(main_frame)
-Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color).pack(side=LEFT)
+delete_cb = Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color, v=delete_before_sync)
+delete_cb.pack(side=LEFT)
 Label(cb_frame, text="Ordner vor Update löschen", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=BOTH)
 cb_frame.pack(pady=15, padx=8, anchor=W, side=TOP)
 sync_frame = Frame(main_frame, bg=rama_color, width=250, height=150)
@@ -295,7 +306,7 @@ progress_label = Label(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 14
 progress_label.pack(fill=X)
 info_label = Message(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 10", text="", aspect=400)
 info_label.pack(fill=BOTH, expand=True)
-sync_frame.pack(side=TOP, pady=15)
+sync_frame.pack(side=TOP, pady=5)
 
 # userdata Frame
 userdata_frame = Frame(root, bg=bg_color)
@@ -352,5 +363,3 @@ except (FileNotFoundError, json.decoder.JSONDecodeError):
     userdata_frame.pack(expand=True, fill=BOTH)
 
 root.mainloop()
-
-# TODO implement options for deleting the folder before download
