@@ -287,7 +287,7 @@ sync_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active,
 sync_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 cb_frame = Frame(main_frame)
 Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color).pack(side=LEFT)
-Label(cb_frame, text="Ordner vor Update löschen", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=BOTH)
+Label(cb_frame, text="Ordner vor Update löschen?", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=BOTH)
 cb_frame.pack(pady=15, padx=8, anchor=W, side=TOP)
 sync_frame = Frame(main_frame, bg=rama_color, width=250, height=150)
 sync_frame.pack_propagate(0)
