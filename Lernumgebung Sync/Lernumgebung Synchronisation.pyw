@@ -192,7 +192,10 @@ def syncLU():
     delete_cb.config(state=DISABLED)
 
     if delete_before_sync.get():
-        shutil.rmtree(LU_dir)
+        try:
+            shutil.rmtree(LU_dir)
+        except FileNotFoundError:
+            pass
 
     # noinspection PyBroadException
     try:
