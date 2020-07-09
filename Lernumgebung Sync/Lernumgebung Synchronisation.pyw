@@ -82,6 +82,8 @@ def submit_userdata(event=""):
     del userdata_reader
     LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
     if check_login():
+        s.get(url + "/index.php?abmelden=1")
+    if check_login():
         userdata_frame.pack_forget()
         main_frame.pack(expand=True, fill=BOTH)
     else:
