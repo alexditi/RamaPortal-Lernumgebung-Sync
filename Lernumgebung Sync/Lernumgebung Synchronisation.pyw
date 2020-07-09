@@ -7,6 +7,7 @@ from queue import LifoQueue
 from tkinter import *
 from tkinter import messagebox, filedialog
 from threading import Thread
+from sys import argv
 
 
 # tooltip class
@@ -364,5 +365,8 @@ except (FileNotFoundError, json.decoder.JSONDecodeError):
         pass
     # show enter userdata screen
     userdata_frame.pack(expand=True, fill=BOTH)
+
+if len(argv) > 1 and argv[1] == "-startup":
+    Thread(target=syncLU).start()
 
 root.mainloop()
