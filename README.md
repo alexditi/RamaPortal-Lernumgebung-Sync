@@ -1,4 +1,4 @@
-## RamaPortal Client-Sided Projects
+# RamaPortal Client-Sided Projects
 
 Hier werden Projekte veröffentlicht, die die [RamaPortal Website](https://portal.rama-mainz.de "Zum RamaPortal") zugänglicher für den Desktop machen.
 
@@ -7,6 +7,8 @@ Hier werden Projekte veröffentlicht, die die [RamaPortal Website](https://porta
 * RamaPortal als Desktop Version
 
 __ __
+
+### Lernumgebung Offline Synchronisation
 
 **Wichtig:**
 
@@ -43,3 +45,9 @@ wird durch .xml ersetzt. Nun sollte die Datei "LU Sync Autostart.xml" existieren
 
 Nun sollte nach der Anmeldung bei Windows das Skript gestartet werden. Nach Beendigung der Synchronisation kann das
 Skript geschlossen werden.
+
+__ __
+
+### RamaPortal Client
+
+Nicht ausgereifte Desktop Version des RamaPortals (**nicht funktionsfähig**)
