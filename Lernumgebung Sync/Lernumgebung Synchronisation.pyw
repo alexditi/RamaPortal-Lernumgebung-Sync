@@ -7,7 +7,7 @@ from queue import LifoQueue
 from tkinter import *
 from tkinter import messagebox, filedialog
 from threading import Thread
-from sys import argv
+from sys import argv, exit
 
 
 # tooltip class
@@ -186,7 +186,7 @@ def get_material_list(href):
     return json.loads(resp)
 
 
-def syncLU():
+def syncLU(destroy=False):
     global error_log
     error_log = []
 
@@ -294,6 +294,10 @@ def syncLU():
     sync_btn.config(state=NORMAL)
     delete_cb.config(state=NORMAL)
 
+    if destroy:
+        root.destroy()
+        exit(0)
+
 
 # main Frame
 main_frame = Frame(root, bg=bg_color)
@@ -369,6 +373,6 @@ except (FileNotFoundError, json.decoder.JSONDecodeError):
     userdata_frame.pack(expand=True, fill=BOTH)
 
 if len(argv) > 1 and argv[1] == "-startup":
-    Thread(target=syncLU).start()
+    Thread(target=lambda: syncLU(True)).start()
 
 root.mainloop()
