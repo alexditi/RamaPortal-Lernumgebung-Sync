@@ -6,9 +6,13 @@ Hier werden Projekte veröffentlicht, die die [RamaPortal Website](https://porta
 * Desktop Chat Funktion
 * RamaPortal als Desktop Version
 
+Unter Releases den neuesten Release downloaden und die .zip entpacken. In den jeweiligen Ordnern findet man die benötigten Dateien für das Projekt.
+
 __ __
 
 ### Lernumgebung Offline Synchronisation
+
+Ordner "Lernumgebung Sync"
 
 **Wichtig:**
 
