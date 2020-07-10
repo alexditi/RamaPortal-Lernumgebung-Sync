@@ -194,8 +194,10 @@ def syncLU(destroy=False):
     sync_btn.config(state=DISABLED)
     delete_cb.config(state=DISABLED)
 
-    if delete_before_sync.get():
+    if delete_before_sync.get() and messagebox.askyesno("Ordner löschen?", 'Soll wirklich der gesamte Ordner "Lernumgebung OfflineSync" gelöscht werden? Auch eigens hinzugefügte Dateien werden gelöscht.'):
         try:
+            info_label.config(text="lösche alten Ordner")
+            root.update()
             shutil.rmtree(LU_dir)
         except FileNotFoundError:
             pass
