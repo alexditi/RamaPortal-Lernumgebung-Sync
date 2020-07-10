@@ -14,23 +14,11 @@ __ __
 
 Ordner "Lernumgebung Sync"
 
-**Wichtig:**
+Für die Lernumgebung Offline Synchronisation ist für Windows 10 (64bit) eine .exe Datei vorhanden. Diese kann einfach benutzt werden.
 
-Aktuell gibt es nur die reine .py Datei für die Lernumgebung Synchronisation zum Download.
-
-Um diese auszuführen, müssen folgende Schritte befolgt werden (Windows):
-
-1. [Python Interpreter](https://www.python.org/downloads/ "Zum Python Download") herunterladen und ausführen
-2. Checkbox "Add Python to PATH" auswählen
-3. "Install Now" auswählen
-4. CMD (Eingabeaufforderung) oder Powershell öffnen (Kann in der Windows Suche geöffnet werden)
-5. Folgende 2 Befehle eingeben und ausführen:
-   * `pip install beautifulsoup4`
-   * `pip install requests`
-6. Python sollte nun installiert  und die .py Datei per Doppelklick ausführbar sein
-
-Für andere Betriebssysteme müssen Python sowie und die Zusatzbibliotheken `beautifulsoup4` und `requests` installiert
-sein (ebenso über pip und die o.g. Befehle möglich)
+Für andere Betriebssysteme, oder falls der Sourcecode genutzt werden möchte, kann die .py Datei genutzt werden. Dafür müssen aber Python und
+die beiden Module `beautifulsoup4` und `requests` installiert sein. Python kann auf der eigenen Website gedownloaded und nach Anleitung installiert
+werden. 
 
 __ __
 
