@@ -43,6 +43,7 @@ root = Tk()
 root.wm_title("LU Synchronisation")
 root.wm_minsize(300, 300)
 root.wm_maxsize(300, 300)
+root.withdraw()
 
 
 # some global variables
@@ -298,6 +299,18 @@ def syncLU(destroy=False):
     if destroy:
         root.quit()
         sys.exit(0)
+
+
+# check for available internet connection
+try:
+    requests.get("http://example.org", timeout=5)
+except (requests.ConnectionError, requests.ConnectTimeout):
+    messagebox.showwarning("Keine Internetverbindung!", "Du bist nicht mit dem Internet verbunden. Stelle sicher dass du mit dem Internet verbunden ist und starte die App erneut.")
+    try:
+        requests.get("http://example.org", timeout=5)
+    except (requests.ConnectionError, requests.ConnectTimeout):
+        sys.exit(0)
+root.deiconify()
 
 
 # main Frame
