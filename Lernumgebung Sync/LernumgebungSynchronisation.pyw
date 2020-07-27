@@ -57,7 +57,7 @@ LU_dir = ""
 show_password = False
 delete_before_sync = BooleanVar()
 
-# color variables
+# color constants
 bg_color = "#282828"
 font_color = "light grey"
 rama_color = "#A51320"
@@ -134,6 +134,7 @@ def download_file(file, dir_string):
 
     # noinspection PyBroadException
     try:
+        s_file = None
         resp = s.get(url + "/edu/edufile.php?id=" + file.get("id") + "&download=1")
         ext = file.get("typ")
         # sort out non standard files
@@ -146,32 +147,26 @@ def download_file(file, dir_string):
         elif ext == "lnk":
             # link to internet page
             s_file = open(dir_string + "/" + file.get("name") + ".url", "w+")
-            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\n")
-            s_file.write("Prop3=19,11\n[InternetShortcut]\nIDList=\n")
+            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\n")
             s_file.write("URL=" + resp.text)
         elif ext == "img":
             # image
             s_file = open(dir_string + "/" + file.get("name") + ".jpg", "wb+")
             s_file.write(resp.content)
-            s_file.close()
         elif ext == "aud":
             # audio file
             s_file = open(dir_string + "/" + file.get("name") + ".mp3", "wb+")
             s_file.write(resp.content)
-            s_file.close()
         elif ext == "ytb":
             # youtube link
             s_file = open(dir_string + "/" + file.get("name") + ".url", "w+")
-            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\n")
-            s_file.write("Prop3=19,11\n[InternetShortcut]\nIDList=\n")
+            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\n")
             s_file.write("URL=https://www.youtube.com/watch?v=" + resp.text)
-            s_file.close()
         elif ext == "vid":
             # video file
             s_file = open(dir_string + "/" + file.get("name") + ".mp4", "wb+")
             s_file.write(resp.content)
-            s_file.close()
-        elif ext == "test":
+        elif ext == "Test":
             # not yet implemented
             pass
         elif ext == "PhET simulation":
@@ -181,7 +176,7 @@ def download_file(file, dir_string):
             # ext is a valid file extension
             s_file = open(dir_string + "/" + file.get("name") + "." + ext, "wb+")
             s_file.write(resp.content)
-            s_file.close()
+        s_file.close()
     except Exception as ex:
         error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
 
