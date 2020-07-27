@@ -29,4 +29,6 @@ __ __
 
 ### RamaPortal Client
 
+Ordner "RamaPortal Client"
+
 Nicht ausgereifte Desktop Version des RamaPortals (**nicht funktionsfähig**)
