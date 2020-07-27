@@ -143,17 +143,22 @@ def download_file(file, dir_string):
         elif ext == "tabellenkalkulation":
             # not yet implemented
             pass
-        elif ext == "embedded link":
-            # not yet implemented
-            pass
+        elif ext == "lnk":
+            # link to internet page
+            s_file = open(dir_string + "/" + file.get("name") + ".url", "w+")
+            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\n")
+            s_file.write("Prop3=19,11\n[InternetShortcut]\nIDList=\n")
+            s_file.write("URL=" + resp.text)
         elif ext == "img":
             # image
             s_file = open(dir_string + "/" + file.get("name") + ".jpg", "wb+")
             s_file.write(resp.content)
             s_file.close()
-        elif ext == "audio":
-            # not yet implemented
-            pass
+        elif ext == "aud":
+            # audio file
+            s_file = open(dir_string + "/" + file.get("name") + ".mp3", "wb+")
+            s_file.write(resp.content)
+            s_file.close()
         elif ext == "ytb":
             # youtube link
             s_file = open(dir_string + "/" + file.get("name") + ".url", "w+")
@@ -161,9 +166,11 @@ def download_file(file, dir_string):
             s_file.write("Prop3=19,11\n[InternetShortcut]\nIDList=\n")
             s_file.write("URL=https://www.youtube.com/watch?v=" + resp.text)
             s_file.close()
-        elif ext == "video":
-            # not yet implemented
-            pass
+        elif ext == "vid":
+            # video file
+            s_file = open(dir_string + "/" + file.get("name") + ".mp4", "wb+")
+            s_file.write(resp.content)
+            s_file.close()
         elif ext == "test":
             # not yet implemented
             pass
