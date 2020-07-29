@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import messagebox
 import requests
 import json
-import sys
 from bs4 import BeautifulSoup
 from threading import Thread
 import copy as cpy
