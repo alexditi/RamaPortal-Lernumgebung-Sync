@@ -71,12 +71,12 @@ def check_login():
 
 def submit_userdata(event=""):
     global userdata_reader, userdata, LU_dir
-    userdata_creator = open(tmpdir + "/userdata.json", "w+")
+    userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
     json.dump({"username": username_entry.get(), "password": password_entry.get(), "dir": dir_entry.get()}, userdata_creator)
     userdata_creator.close()
     del userdata_creator
     # open reader
-    userdata_reader = open(tmpdir + "/userdata.json", "r")
+    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
     userdata = json.load(userdata_reader)
     userdata_reader.close()
     del userdata_reader
@@ -365,7 +365,7 @@ browse_btn.bind("<Return>", submit_userdata)
 # try parsing userdata from existing userdata file
 # existing userdata file
 try:
-    userdata_reader = open(tmpdir + "/userdata.json", "r")
+    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
     userdata = json.load(userdata_reader)
     userdata_reader.close()
     del userdata_reader

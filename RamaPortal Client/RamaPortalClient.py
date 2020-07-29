@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 from threading import Thread
 import copy as cpy
 from time import sleep
-import webbrowser
 import os
 
 
@@ -72,23 +71,20 @@ rama_color = "#A51320"
 rama_color_active = "#9E1220"
 
 # some global variables
-default_entry = ["Benutzername", "Passwort"]
-last_focus = ""
+icons = {"back_to_main": PhotoImage(file="icon.png"), "pdf": PhotoImage(file="pdfIcon.png"), "rama_logo": PhotoImage(file="logo_rama.png")}
+tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
 url = "https://portal.rama-mainz.de/"
 s = requests.Session()
-icons = {"back_to_main": PhotoImage(file="icon.png"), "pdf": PhotoImage(file="pdfIcon.png"), "rama_logo": PhotoImage(file="logo_rama.png")}
-chatBtns = [ChatBtn(Button(), 0) for _ in range(15)]
-chats = [{"id": "", "name": ""} for _ in range(15)]
-msgArea = [Frame()]
-msgMField = [Message()]
+userdata_reader = ""
+userdata = {}
+default_entry = ["Benutzername", "Passwort"]
+last_focus = ""
 crChat = -1
 chatUpdater = Thread
 stopUpdate = False
 prev_msg = []
-sessid = dict()
 cTemp = 0
 loginName = ""
-tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
 
 
 # Login Entry management
@@ -118,12 +114,30 @@ def on_closing(event=""):
 
 
 def check_login():
-    return not (BeautifulSoup(s.post(url + "/index.php", {"txtBenutzer": userdata.get("username"), "txtKennwort": userdata.get(
+    return not (BeautifulSoup(s.post(url + "/index.php", {"username": userdata.get("username"), "password": userdata.get(
             "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
 
 
-def submit_login():
-    pass
+def submit_login(event=""):
+    global userdata_reader, userdata
+    userdata_creator = open(tmpdir + "/userdata_client.json", "w+")
+    json.dump({"username": usernameEntry.get(), "password": passwordEntry.get()}, userdata_creator)
+    userdata_creator.close()
+    del userdata_creator
+    # open reader
+    userdata_reader = open(tmpdir + "/userdata_client.json", "r")
+    userdata = json.load(userdata_reader)
+    userdata_reader.close()
+    del userdata_reader
+    if check_login():
+        s.get(url + "/index.php?abmelden=1")
+    if check_login():
+        hide_login()
+        show_main()
+    else:
+        usernameEntry.delete(0, END)
+        passwordEntry.delete(0, END)
+        messagebox.showerror("Anmeldung fehlgeschlagen!", "Falscher Benutzername oder Passwort")
 
 
 def logout():
@@ -620,11 +634,10 @@ root.bind("<Alt-F4>", on_closing)
 # try parsing userdata from existing userdata file
 # existing userdata file
 try:
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
+    userdata_reader = open(tmpdir + "/userdata_client.json", "r")
     userdata = json.load(userdata_reader)
     userdata_reader.close()
     del userdata_reader
-    LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
 
     # check for wrong login data
     if not check_login():
