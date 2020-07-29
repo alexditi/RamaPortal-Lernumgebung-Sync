@@ -65,18 +65,18 @@ rama_color_active = "#9E1220"
 
 
 def check_login():
-    return not (BeautifulSoup(s.post(url + "/index.php", {"txtBenutzer": userdata.get("username"), "txtKennwort": userdata.get(
+    return not (BeautifulSoup(s.post(url + "/index.php", {"username": userdata.get("username"), "password": userdata.get(
             "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
 
 
 def submit_userdata(event=""):
     global userdata_reader, userdata, LU_dir
-    userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
+    userdata_creator = open(tmpdir + "/userdata.json", "w+")
     json.dump({"username": username_entry.get(), "password": password_entry.get(), "dir": dir_entry.get()}, userdata_creator)
     userdata_creator.close()
     del userdata_creator
     # open reader
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
+    userdata_reader = open(tmpdir + "/userdata.json", "r")
     userdata = json.load(userdata_reader)
     userdata_reader.close()
     del userdata_reader
@@ -365,7 +365,7 @@ browse_btn.bind("<Return>", submit_userdata)
 # try parsing userdata from existing userdata file
 # existing userdata file
 try:
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
+    userdata_reader = open(tmpdir + "/userdata.json", "r")
     userdata = json.load(userdata_reader)
     userdata_reader.close()
     del userdata_reader

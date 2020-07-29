@@ -10,32 +10,27 @@ import webbrowser
 import os
 
 
-class ChatBtn(object):
-    btn = Button
+# Chat Btn Class: Specified Command to display a chat
+class ChatBtn(Button):
     chat_id = 0
 
-    def __init__(self, btn, chat_id):
-        self.btn = btn
+    def __init__(self, chat_id, container, *args, **kwargs):
+        super().__init__(container, *args, **kwargs)
         self.chat_id = chat_id
-        self.btn.config(command=lambda: display_chat(self.chat_id))
-
-    def get_btn(self):
-        return self.btn
+        self.config(command=lambda: display_chat(self.chat_id))
 
 
-class DwnlBtn(object):
-    btn = Button
+# Download Btn Class: Specified Command to open a file that is attached to a message
+class DwnlBtn(Button):
     href = ""
 
-    def __init__(self, btn, href):
-        self.btn = btn
+    def __init__(self, href, container, *args, **kwargs):
+        super().__init__(container, *args, **kwargs)
         self.href = href
-        self.btn.config(command=lambda: open_from_URL(self.href))
-
-    def get_btn(self):
-        return self.btn
+        self.config(command=lambda: open_attached(self.href))
 
 
+# Scrollable Frame Class
 class ScrollableFrame(Frame):
 
     canvas = Canvas
@@ -65,27 +60,23 @@ class ScrollableFrame(Frame):
         scrollbar.pack(side="right", fill="y")
 
 
-# webbrowser.register("windows-default", None)
-
 # setting up root widget
 root = Tk()
 root.title("Rama Portal")
 root.geometry("1000x800")
 
-# decoration constants
+# color constants
 bg_color = "#282828"
 font_color = "light grey"
 rama_color = "#A51320"
 rama_color_active = "#9E1220"
 
-# some variables
+# some global variables
 default_entry = ["Benutzername", "Passwort"]
 last_focus = ""
 url = "https://portal.rama-mainz.de/"
 s = requests.Session()
-icon = PhotoImage(file="icon.png")
-pdfIcon = PhotoImage(file="pdfIcon.png")
-logo = PhotoImage(file="logo_rama.png")
+icons = {"back_to_main": PhotoImage(file="icon.png"), "pdf": PhotoImage(file="pdfIcon.png"), "rama_logo": PhotoImage(file="logo_rama.png")}
 chatBtns = [ChatBtn(Button(), 0) for _ in range(15)]
 chats = [{"id": "", "name": ""} for _ in range(15)]
 msgArea = [Frame()]
@@ -98,30 +89,6 @@ sessid = dict()
 cTemp = 0
 loginName = ""
 tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
-
-# copy userdata to dictionary
-try:
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
-except FileNotFoundError:
-    # non existing dir or file
-    try:
-        # create dir
-        os.mkdir(tmpdir)
-    except FileExistsError:
-        pass
-    # create file
-    userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
-    json.dump({"username": "", "password": "", "dir": ""}, userdata_creator)
-    userdata_creator.close()
-    del userdata_creator
-    # open reader
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
-
-userdata = json.load(userdata_reader)
-userdata_reader.close()
-del userdata_reader
-username = ""
-password = ""
 
 
 # Login Entry management
@@ -150,78 +117,18 @@ def on_closing(event=""):
         root.destroy()
 
 
-# login verification
-def login(event=""):
-    global username, password, userdata, sessid, loginName
-    resp = s.post(url + "main.php", {"txtBenutzer": usernameEntry.get(), "txtKennwort": passwordEntry.get()})
-    if resp.text.find("Falscher Anmeldename") != -1:
-        label_wrongPassword.pack_forget()
-        label_wrongUsername.pack(pady=30)
-        return False
-    elif resp.text.find("Login fehlgeschlagen") != -1:
-        label_wrongUsername.pack_forget()
-        label_wrongPassword.pack(pady=30)
-        return False
-    else:
-        # save login data
-        userdata.update({"username": usernameEntry.get(), "password": passwordEntry.get()})
-        username = userdata.get("username")
-        password = userdata.get("password")
+def check_login():
+    return not (BeautifulSoup(s.post(url + "/index.php", {"txtBenutzer": userdata.get("username"), "txtKennwort": userdata.get(
+            "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
 
-        # get client name
-        resp = s.get(url + "/index.php?redir=no")
-        loginName = BeautifulSoup(resp.text, features="html.parser").text
-        loginName = loginName[loginName.find("angemeldet als") + 15:loginName.find(".Zur Startseite")]
 
-        # set client infos
-        accoutLabel.config(text="Angemeldet als\n" + loginName + "\n(" + username + ")")
-        s.get(url + "/main.php?extLogin=ja")
-        usernameEntry.delete(0, END)
-        usernameEntry.insert(0, "Benutzername")
-        passwordEntry.delete(0, END)
-        passwordEntry.insert(0, "Passwort")
-        label_wrongUsername.pack_forget()
-        label_wrongPassword.pack_forget()
-
-        # load data
-        # 1. chat info
-        r = s.get(url + "chat.php")
-        chatinfo = r.text
-        for i1 in range(1, 15):
-            idfinder = ""
-            namefinder = ""
-            ind = chatinfo.find("sidebar_btn_" + str(i1))
-            if ind == -1:
-                break
-            while chatinfo[ind] != '>':
-                idfinder += chatinfo[ind]
-                ind += 1
-            ind += 1
-            while chatinfo[ind] != '<':
-                namefinder += chatinfo[ind]
-                ind += 1
-            chats[i1].update({"id": idfinder[(idfinder.find("id=") + 3):-1], "name": namefinder})
-
-        # 2. chatBtn init
-        for i2 in range(1, 15):
-            if chats[i2].get("name") == "":
-                chatBtns[i2].get_btn().config(bg=bg_color, state=DISABLED)
-            else:
-                chatBtns[i2].get_btn().config(text=chats[i2].get("name"))
-                chatBtns[i2].chat_id = chats[i2].get("id")
-
-        sessid = {"name": "PHPSESSID", "value": s.cookies.get("PHPSESSID")}
-
-        hide_login()
-        show_main()
-        return True
+def submit_login():
+    pass
 
 
 def logout():
-    global userdata, username, password
+    global userdata
     userdata.update({"username": "", "password": ""})
-    username = ""
-    password = ""
     accoutLabel.config(text="Angemeldet als\n")
     s.get(url + "index.php?abmelden=1")
     hide_options()
@@ -371,7 +278,7 @@ def display_chat(chat_id):
             msgArea[i].pack(side="top", expand=True, fill=X)
             Label(msgArea[i], text=speaker, font="Arial 12", bg=nclr, fg=nclrF, width=15).pack(fill=X, side="left", anchor=N)
             if docUrl != "":
-                DwnlBtn(Button(msgArea[i], image=pdfIcon, bg=nclr, activebackground=nclr, relief=FLAT, borderwidth=0, anchor=NW), docUrl).get_btn().pack(side="top", expand=True, fill=X, pady=5)
+                DwnlBtn(Button(msgArea[i], image=icons.get("pdf"), bg=nclr, activebackground=nclr, relief=FLAT, borderwidth=0, anchor=NW), docUrl).get_btn().pack(side="top", expand=True, fill=X, pady=5)
             msgMField[i] = Message(msgArea[i], text=msg, bg=nclr, fg=nclrF, font="Arial 12", anchor=NW, width=700)
             msgMField[i].pack(expand=True, fill=X, side="left", anchor=N)
             Frame(msgFrame.scrollable_frame, bg=bg_color, height=15).pack(side="top", expand=True, fill=X)
@@ -394,7 +301,7 @@ def update_chats():
         sleep(3)
 
 
-def send_new_msg():
+"""def send_new_msg():
     msg = message.get("1.0", END)
     if len(msg) > 1000:
         messagebox.showwarning("Zeichenlimit erreicht", "Die Nachricht darf nicht länger als 1000 Zeichen sein!")
@@ -402,23 +309,27 @@ def send_new_msg():
         s.post("https://portal.rama-mainz.de/chat.php?id=" + str(crChat) + "&action=addmsg", {"msgtext": msg})
         sleep(0.1)
         message.delete("1.0", END)
-        display_chat(crChat)
+        display_chat(crChat)"""
 
 
 def attachFile():
     pass
 
 
-def open_from_URL(href):
-    global cTemp, browser
-    r = s.get(url + href, allow_redirects=TRUE)
-    open("temp/temp" + str(cTemp) + ".pdf", "wb+").write(r.content)
-    sleep(0.05)
+def open_attached(href):
+    pass
+
+
+# check for available internet connection
+try:
+    requests.get("http://example.org", timeout=5)
+except (requests.ConnectionError, requests.ConnectTimeout):
+    messagebox.showwarning("Keine Internetverbindung!", "Du bist nicht mit dem Internet verbunden. Stelle sicher dass du mit dem Internet verbunden ist und starte die App erneut.")
     try:
-        webbrowser.get('windows-default').open(os.path.realpath("temp\\temp" + str(cTemp) + ".pdf"))
-    except Exception as e:
-        print(e)
-    cTemp += 1
+        requests.get("http://example.org", timeout=5)
+    except (requests.ConnectionError, requests.ConnectTimeout):
+        sys.exit(0)
+root.deiconify()
 
 
 # Building Login Framework
@@ -431,14 +342,14 @@ usernameEntry.pack(pady=5)
 usernameEntry.insert(0, "Benutzername")
 usernameEntry.bind("<FocusIn>", on_entry_focus)
 usernameEntry.bind("<FocusOut>", on_entry_left)
-usernameEntry.bind("<Return>", login)
+usernameEntry.bind("<Return>", submit_login)
 passwordEntry = Entry(loginFrame, highlightcolor="black", highlightbackground="black", highlightthickness=2, relief=FLAT, fg=font_color, bg=bg_color, font="Arial 18")
 passwordEntry.pack(pady=5)
 passwordEntry.insert(0, "Passwort")
 passwordEntry.bind("<FocusIn>", on_entry_focus)
 passwordEntry.bind("<FocusOut>", on_entry_left)
-passwordEntry.bind("<Return>", login)
-loginBtn = Button(loginFrame, text="Login", fg=font_color, bg="blue", relief=FLAT, command=login, font="Arial 18", width=19, height=1, borderwidth=0, activebackground="blue", activeforeground=font_color).pack(pady=5)
+passwordEntry.bind("<Return>", submit_login)
+loginBtn = Button(loginFrame, text="Login", fg=font_color, bg="blue", relief=FLAT, command=submit_login, font="Arial 18", width=19, height=1, borderwidth=0, activebackground="blue", activeforeground=font_color).pack(pady=5)
 
 # Setting up Frames
 mainFrame = Frame(root, bg=bg_color)
@@ -647,7 +558,7 @@ def hide_options():
 
 
 # Building Main Framework
-Label(mainFrame, image=logo, bg=bg_color).place(x=280, y=50)
+Label(mainFrame, image=icons.get("rama_logo"), bg=bg_color).place(x=280, y=50)
 Button(mainFrame, text="Mein\nStunden-\nplan",  bg=rama_color, fg=font_color, relief=FLAT, activebackground=rama_color_active, activeforeground=font_color, borderwidth=0, font="Arial 14", command=show_stundenplan).place(width=120, height=120, x=125, y=250)
 Button(mainFrame, text="Vertretungs-\nplan", bg=rama_color, fg=font_color, relief=FLAT, activebackground=rama_color_active, activeforeground=font_color, borderwidth=0, font="Arial 14", command=show_vertretungsplan).place(width=120, height=120, x=250, y=250)
 Button(mainFrame, text="Termin-\nkalender", bg=rama_color, fg=font_color, relief=FLAT, activebackground=rama_color_active, activeforeground=font_color, borderwidth=0, font="Arial 14", command=show_terminkalender).place(width=120, height=120, x=375, y=250)
@@ -662,60 +573,41 @@ Button(mainFrame, text="Umfragen", bg=rama_color, fg=font_color, relief=FLAT, ac
 Button(mainFrame, text="Einstellungen", bg=rama_color, fg=font_color, relief=FLAT, activebackground=rama_color_active, activeforeground=font_color, borderwidth=0, font="Arial 14", command=show_options).place(width=120, height=120, x=750, y=375)
 
 # Building Stundenplan Framework
-Button(stundenplanFrame, command=hide_stundenplan, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(stundenplanFrame, command=hide_stundenplan, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Vertretungsplan Framework
-Button(vertretungsplanFrame, command=hide_vertretungsplan, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(vertretungsplanFrame, command=hide_vertretungsplan, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Kalender Framework
-Button(terminkalenderFrame, command=hide_terminkalender, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(terminkalenderFrame, command=hide_terminkalender, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Fehlzeiten Framework
-Button(fehlzeitenFrame, command=hide_fehlzeiten, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(fehlzeitenFrame, command=hide_fehlzeiten, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Ags Framework
-Button(agFrame, command=hide_ag, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(agFrame, command=hide_ag, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Klausurenplan Framework
-Button(klausurenFrame, command=hide_Klausurenplan, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(klausurenFrame, command=hide_Klausurenplan, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Chats Framework
-Button(chatsFrame, command=hide_chats, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(side="left", anchor=N, padx=8, pady=8)
-chatBtns[0] = Button(chatsFrame, text="Direkt", bg=rama_color, activebackground=rama_color, fg=font_color, activeforeground=font_color, relief=FLAT, borderwidth=0, font="Arial 16", width=10, height=1)
-chatBtns[0].place(x=0, y=100)
-for b in range(1, 15):
-    chatBtns[b] = ChatBtn(Button(chatsFrame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, relief=FLAT, borderwidth=0, height=1, font="Arial 16", width=10), 0)
-    chatBtns[b].get_btn().place(x=0, y=100 + b*42)
-Frame(chatsFrame, bg=bg_color, height=100).pack(anchor=NE, fill=X)
-newmsgFrame = Frame(chatsFrame, bg="white", height=122)
-newmsgFrame.pack(side="top", fill=X)
-msgFrame = ScrollableFrame(chatsFrame, bg=bg_color)
-msgFrame.pack(expand=True, fill=BOTH, side="top")
-msgManageFrame = Frame(newmsgFrame, bg=bg_color)
-msgManageFrame.grid(row=1, column=1, rowspan=2, columnspan=1, sticky=NSEW)
-Button(msgManageFrame, text="Senden", width=14, bg=bg_color, fg=rama_color, activebackground=bg_color, activeforeground=rama_color_active, font="Arial 12 bold", relief=FLAT, command=send_new_msg).grid(row=1, column=1, pady=10)
-Button(msgManageFrame, text="Datei anhängen", width=14, bg=bg_color, fg=rama_color, activeforeground=rama_color_active, activebackground=bg_color, font="Arial 12 bold", relief=FLAT, command=attachFile).grid(row=2, column=1, pady=10)
-message = Text(newmsgFrame, bg=bg_color, fg=font_color, font="Arial 12", height=6)
-message.grid(row=1, column=2, rowspan=2)
-
-Frame(newmsgFrame, bg=rama_color, height=5).grid(row=3, column=1, columnspan=2, sticky=NSEW)
-Frame(newmsgFrame, bg=bg_color, height=15).grid(row=4, column=1,  columnspan=2, sticky=NSEW)
+Button(chatsFrame, command=hide_chats, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(side="left", anchor=N, padx=8, pady=8)
 
 # Building Lernumgebung Framework
-Button(luFrame, command=hide_lernumgebung, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(luFrame, command=hide_lernumgebung, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Anleitung LU Framework
-Button(instructionLuFrame, command=hide_instructionLU, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(instructionLuFrame, command=hide_instructionLU, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building für Schüler Framework
-Button(forStudentsFrame, command=hide_forStudents, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(forStudentsFrame, command=hide_forStudents, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Umfragen Framework
-Button(surveysFrame, command=hide_surveys, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
+Button(surveysFrame, command=hide_surveys, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Options Framework
-Button(optionsFrame, command=hide_options, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icon).pack(anchor=N+W, padx=8, pady=8)
-accoutLabel = Label(optionsFrame, bg=bg_color, fg=font_color, text="Angemeldet als\n" + username, font="Arial 24")
+Button(optionsFrame, command=hide_options, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
+accoutLabel = Label(optionsFrame, bg=bg_color, fg=font_color, text="Angemeldet als\n", font="Arial 24")
 accoutLabel.pack(pady=50)
 Button(optionsFrame, text="Abmelden", width=16, command=logout, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, relief=FLAT, borderwidth=0, font="Arial 18").pack(pady=10)
 Button(optionsFrame, text="Passwort ändern", width=16, command=change_password, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, relief=FLAT, borderwidth=0, font="Arial 18").pack(pady=5)
@@ -724,17 +616,30 @@ Button(optionsFrame, text="Passwort ändern", width=16, command=change_password,
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.bind("<Alt-F4>", on_closing)
 
-# check for deposited userdata
-if userdata.get("password") == "" and userdata.get("username") == "":
-    show_login()
-else:
-    usernameEntry.delete(0, END)
-    passwordEntry.delete(0, END)
-    usernameEntry.insert(0, userdata.get("username"))
-    passwordEntry.insert(0, userdata.get("password"))
-    if login():
-        show_main()
-    else:
+
+# try parsing userdata from existing userdata file
+# existing userdata file
+try:
+    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
+    userdata = json.load(userdata_reader)
+    userdata_reader.close()
+    del userdata_reader
+    LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
+
+    # check for wrong login data
+    if not check_login():
         show_login()
+    else:
+        show_main()
+
+# non existing dir or file, incorrect userdata file
+except (FileNotFoundError, json.decoder.JSONDecodeError):
+    try:
+        # create dir
+        os.mkdir(tmpdir)
+    except FileExistsError:
+        pass
+    # show enter userdata screen
+    show_login()
 
 root.mainloop()
