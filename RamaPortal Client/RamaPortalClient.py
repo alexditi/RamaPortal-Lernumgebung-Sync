@@ -84,27 +84,13 @@ chatUpdater = Thread
 stopUpdate = False
 prev_msg = []
 cTemp = 0
-loginName = ""
-
-
-# Login Entry management
-def on_entry_focus(event):
-    global last_focus
-    if event.widget.get() in default_entry:
-        last_focus = event.widget.get()
-        event.widget.delete(0, END)
-
-
-def on_entry_left(event):
-    if event.widget.get() == "":
-        event.widget.insert(0, last_focus)
 
 
 # window closing manager
 def on_closing(event=""):
     global stopUpdate
     if messagebox.askokcancel("Verlassen", "RAMA Portal verlassen?"):
-        userdata_writer = open(tmpdir + "/userdata.json", 'w')
+        userdata_writer = open(tmpdir + "/userdata_client.json", 'w')
         json.dump(userdata, userdata_writer)
         userdata_writer.close()
         stopUpdate = True
@@ -133,17 +119,20 @@ def submit_login(event=""):
         s.get(url + "/index.php?abmelden=1")
     if check_login():
         hide_login()
-        show_main()
+        show_main(True)
     else:
         usernameEntry.delete(0, END)
         passwordEntry.delete(0, END)
-        messagebox.showerror("Anmeldung fehlgeschlagen!", "Falscher Benutzername oder Passwort")
+        label_wrongUserdata.pack(pady=20)
 
 
 def logout():
     global userdata
     userdata.update({"username": "", "password": ""})
     accoutLabel.config(text="Angemeldet als\n")
+    label_wrongUserdata.pack_forget()
+    usernameEntry.delete(0, END)
+    passwordEntry.delete(0, END)
     s.get(url + "index.php?abmelden=1")
     hide_options()
     hide_main()
@@ -292,7 +281,7 @@ def display_chat(chat_id):
             msgArea[i].pack(side="top", expand=True, fill=X)
             Label(msgArea[i], text=speaker, font="Arial 12", bg=nclr, fg=nclrF, width=15).pack(fill=X, side="left", anchor=N)
             if docUrl != "":
-                DwnlBtn(Button(msgArea[i], image=icons.get("pdf"), bg=nclr, activebackground=nclr, relief=FLAT, borderwidth=0, anchor=NW), docUrl).get_btn().pack(side="top", expand=True, fill=X, pady=5)
+                DwnlBtn(Button(msgArea[i], image=icons.get("pdf"), bg=nclr, activebackground=nclr, relief=FLAT, borderwidth=0, anchor=NW), docUrl).pack(side="top", expand=True, fill=X, pady=5)
             msgMField[i] = Message(msgArea[i], text=msg, bg=nclr, fg=nclrF, font="Arial 12", anchor=NW, width=700)
             msgMField[i].pack(expand=True, fill=X, side="left", anchor=N)
             Frame(msgFrame.scrollable_frame, bg=bg_color, height=15).pack(side="top", expand=True, fill=X)
@@ -346,26 +335,8 @@ except (requests.ConnectionError, requests.ConnectTimeout):
 root.deiconify()
 
 
-# Building Login Framework
-loginFrame = Frame(root, bg=bg_color)
-Label(loginFrame, text="RAMA Portal", fg=rama_color, bg=bg_color, font="Arial 48").pack(pady=80)
-label_wrongUsername = Label(loginFrame, text="Login fehlgeschlagen.\nBenutzername nicht gefunden", font="Arial 18", bg=bg_color, fg=rama_color)
-label_wrongPassword = Label(loginFrame, text="Login fehlgeschlagen.\nFalsches Passwort", font="Arial 18", bg=bg_color, fg=rama_color)
-usernameEntry = Entry(loginFrame, highlightcolor="black", highlightbackground="black", highlightthickness=2, relief=FLAT, fg=font_color, bg=bg_color, font="Arial 18")
-usernameEntry.pack(pady=5)
-usernameEntry.insert(0, "Benutzername")
-usernameEntry.bind("<FocusIn>", on_entry_focus)
-usernameEntry.bind("<FocusOut>", on_entry_left)
-usernameEntry.bind("<Return>", submit_login)
-passwordEntry = Entry(loginFrame, highlightcolor="black", highlightbackground="black", highlightthickness=2, relief=FLAT, fg=font_color, bg=bg_color, font="Arial 18")
-passwordEntry.pack(pady=5)
-passwordEntry.insert(0, "Passwort")
-passwordEntry.bind("<FocusIn>", on_entry_focus)
-passwordEntry.bind("<FocusOut>", on_entry_left)
-passwordEntry.bind("<Return>", submit_login)
-loginBtn = Button(loginFrame, text="Login", fg=font_color, bg="blue", relief=FLAT, command=submit_login, font="Arial 18", width=19, height=1, borderwidth=0, activebackground="blue", activeforeground=font_color).pack(pady=5)
-
 # Setting up Frames
+loginFrame = Frame(root, bg=bg_color)
 mainFrame = Frame(root, bg=bg_color)
 stundenplanFrame = Frame(root, bg=bg_color)
 vertretungsplanFrame = Frame(root, bg=bg_color)
@@ -394,7 +365,9 @@ def hide_login():
 
 
 # Main Frame Manager
-def show_main():
+def show_main(init=False):
+    if init:
+        accoutLabel.config(text="Angemeldet als\n" + userdata.get("username"))
     mainFrame.pack(expand=True, fill=BOTH)
     root.update_idletasks()
 
@@ -571,6 +544,19 @@ def hide_options():
     root.update_idletasks()
 
 
+# Building Login Framework
+Label(loginFrame, text="RAMA Portal", fg=rama_color, bg=bg_color, font="Arial 48").pack(pady=80)
+label_wrongUserdata = Label(loginFrame, text="Login fehlgeschlagen.\nFalscher Benutzername oder falsches Password", font="Arial 18", bg=bg_color, fg=rama_color)
+Label(loginFrame, text="Benutzername", font="Arial 18", bg=bg_color, fg=font_color).pack()
+usernameEntry = Entry(loginFrame, highlightcolor="black", highlightbackground="black", highlightthickness=2, relief=FLAT, fg=font_color, bg=bg_color, font="Arial 18")
+usernameEntry.pack(pady=5)
+usernameEntry.bind("<Return>", submit_login)
+Label(loginFrame, text="Passwort", font="Arial 18", bg=bg_color, fg=font_color).pack()
+passwordEntry = Entry(loginFrame, highlightcolor="black", highlightbackground="black", highlightthickness=2, relief=FLAT, fg=font_color, bg=bg_color, font="Arial 18")
+passwordEntry.pack(pady=5)
+passwordEntry.bind("<Return>", submit_login)
+loginBtn = Button(loginFrame, text="Login", fg=font_color, bg="blue", relief=FLAT, command=submit_login, font="Arial 18", width=19, height=1, borderwidth=0, activebackground="blue", activeforeground=font_color).pack(pady=5)
+
 # Building Main Framework
 Label(mainFrame, image=icons.get("rama_logo"), bg=bg_color).place(x=280, y=50)
 Button(mainFrame, text="Mein\nStunden-\nplan",  bg=rama_color, fg=font_color, relief=FLAT, activebackground=rama_color_active, activeforeground=font_color, borderwidth=0, font="Arial 14", command=show_stundenplan).place(width=120, height=120, x=125, y=250)
@@ -643,7 +629,7 @@ try:
     if not check_login():
         show_login()
     else:
-        show_main()
+        show_main(True)
 
 # non existing dir or file, incorrect userdata file
 except (FileNotFoundError, json.decoder.JSONDecodeError):
