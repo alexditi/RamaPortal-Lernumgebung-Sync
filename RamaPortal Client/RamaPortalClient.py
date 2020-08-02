@@ -4,7 +4,6 @@ import requests
 import json
 from bs4 import BeautifulSoup
 from threading import Thread
-import copy as cpy
 from time import sleep
 import os
 
@@ -70,20 +69,42 @@ font_color = "light grey"
 rama_color = "#A51320"
 rama_color_active = "#9E1220"
 
-# some global variables
+# global variables
 icons = {"back_to_main": PhotoImage(file="icon.png"), "pdf": PhotoImage(file="pdfIcon.png"), "rama_logo": PhotoImage(file="logo_rama.png")}
 tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
 url = "https://portal.rama-mainz.de/"
 s = requests.Session()
+request_login = False
+init_done = {"stundenplan": False, "vertretungsplan": False, "terminkalender": False, "fehlzeiten":  False, "ag": False,
+             "klausurenplan": False, "chats": False, "lernumgebung": False, "instructionLU": False, "forStudents": False, "surveys": False, "options": False}
+
+# userdata varibles
 userdata_reader = ""
 userdata = {}
-default_entry = ["Benutzername", "Passwort"]
-last_focus = ""
+
+# chat specific variables
 crChat = -1
 chatUpdater = Thread
 stopUpdate = False
 prev_msg = []
 cTemp = 0
+chatBtns = []
+
+# Setting up Frames
+loginFrame = Frame(root, bg=bg_color)
+mainFrame = Frame(root, bg=bg_color)
+stundenplanFrame = Frame(root, bg=bg_color)
+vertretungsplanFrame = Frame(root, bg=bg_color)
+terminkalenderFrame = Frame(root, bg=bg_color)
+fehlzeitenFrame = Frame(root, bg=bg_color)
+agFrame = Frame(root, bg=bg_color)
+klausurenFrame = Frame(root, bg=bg_color)
+chatsFrame = Frame(root, bg=bg_color)
+luFrame = Frame(root, bg=bg_color)
+instructionLuFrame = Frame(root, bg=bg_color)
+forStudentsFrame = Frame(root, bg=bg_color)
+surveysFrame = Frame(root, bg=bg_color)
+optionsFrame = Frame(root, bg=bg_color)
 
 
 # window closing manager
@@ -119,7 +140,7 @@ def submit_login(event=""):
         s.get(url + "/index.php?abmelden=1")
     if check_login():
         hide_login()
-        show_main(True)
+        show_main()
     else:
         usernameEntry.delete(0, END)
         passwordEntry.delete(0, END)
@@ -127,20 +148,31 @@ def submit_login(event=""):
 
 
 def logout():
-    global userdata
+    global userdata, init_done, chatBtns
     userdata.update({"username": "", "password": ""})
+    s.get(url + "index.php?abmelden=1")
+    init_done = {"stundenplan": False, "vertretungsplan": False, "terminkalender": False, "fehlzeiten": False, "ag": False,
+                 "klausurenplan": False, "chats": False, "lernumgebung": False, "instructionLU": False,
+                 "forStudents": False, "surveys": False, "options": False}
+
+    # gui reset
+    # options
     accoutLabel.config(text="Angemeldet als\n")
-    label_wrongUserdata.pack_forget()
     usernameEntry.delete(0, END)
     passwordEntry.delete(0, END)
-    s.get(url + "index.php?abmelden=1")
+    label_wrongUserdata.pack_forget()
+
+    # chats
+    for btn in chatBtns:
+        btn.pack_forget()
+    chatBtns = []
+
     hide_options()
     hide_main()
     show_login()
 
 
 def change_password():
-    # s.get(url + "index.php?passwd=1")
     # r1 = s.post(url + "index.php?passwd=1", {"altKennwort": "sander", "neuKennwort": "sander2003", "neu2Kennwort": "sander2003"})
     messagebox.showinfo("Noch nicht verfügbar", "Dieses Feature ist aktuell noch nicht verfügbar.")
 
@@ -151,146 +183,81 @@ def display_chat(chat_id):
     messages = []
 
     if chat_id != -1:
-        r1 = s.get(url + "/chat.php?id=" + str(chat_id))
-        c = r1.text
+        # parsing html message
+        message_bar = BeautifulSoup(s.get(url + "chat.php?id=%d" % chat_id).content,
+                                    features="html.parser").form.div.table
+        separators = message_bar.find_all(class_="separator")
+        for separator in separators:
+            separator.parent.extract()
+        separators = message_bar.find_all(class_="placeholder")
+        for separator in separators:
+            separator.extract()
+        message_bar = message_bar.find_all("tr")[1:]
 
-        # set up c
-        msgFinder = ""
-        start = c.find("<td class='message-new'>")
-        while msgFinder.find("<tr class='placeholder'></tr>") == -1:
-            msgFinder += c[start]
-            start += 1
-        c = c[start:]
-
-        # eval c
-        while True:
-            msgProvider = ""
-            msgFinder = ""
-            speakerFinder = ""
-            docFinder = ""
+        for message in message_bar:
+            text = message.find(class_="message-right").text.replace("\n", "").replace("\r", "")
+            speaker = ""
             tag = ""
+            docurl = ""
 
-            start = c.find("<tr>")
-            if start == -1:
-                break
-            while msgProvider.find("</tr>") == -1:
-                msgProvider += c[start]
-                start += 1
-            if msgProvider.find(
-                    "<input type='text' id='filenam' name='filenam' size='50' style='background:#eee;' placeholder='jpg,jpeg,gif,png,tif,tiff,bmp oder pdf' readonly='readonly' value=''>") != -1:
-                break
+            messages.append((speaker, tag, text, docurl))
 
-            # in this if clause, the message part will be decoded
-            if msgProvider.find("<tr><td class='separator'></td></tr>") == -1:
+        for msg in messages:
+            print("%s (%s) hat Folgendes geschrieben: %s\nAngehängt wurde folgende Datei: %s" % msg)
 
-                # search for speaker
-                got = 0
-                if msgProvider.find("speaker-right lehrer") != -1:
-                    got = msgProvider.find("speaker-right lehrer")
-                    tag = "t"
-                elif msgProvider.find("speaker-right ") != -1:
-                    got = msgProvider.find("speaker-right")
-                    tag = "o"
-                if msgProvider.find("speaker-left") != -1:
-                    got = msgProvider.find("speaker-left")
-                    tag = "m"
-                while speakerFinder.find("</td>") == -1:
-                    speakerFinder += msgProvider[got]
-                    got += 1
-                speakerFinder = speakerFinder.replace("<br />", "\n")
-                speakerFinder = speakerFinder.replace("</td>", "")
-                speakerFinder = BeautifulSoup(speakerFinder, features="html.parser").text
-                speakerFinder = speakerFinder.replace("speaker-right lehrer'>", "")
-                speakerFinder = speakerFinder.replace("speaker-right '>", "")
-                speakerFinder = speakerFinder.replace("speaker-left'>", "")
+""" # check for new messages/other chat selection
+if messages != prev_msg:
+    # set up scrollable Chat Frame
+    msgFrame.pack_forget()
+    del msgFrame.scrollable_frame
+    del msgFrame
+    msgFrame = ScrollableFrame(chatsFrame, bg=bg_color)
+    msgFrame.scrollable_frame.option_add("*background", bg_color)
 
-                # search for message
-                got = 0
-                if msgProvider.find("message-right lehrer") != -1:
-                    got = msgProvider.find("message-right lehrer")
-                    tag = "t"
-                elif msgProvider.find("message-right ") != -1:
-                    got = msgProvider.find("message-right ")
-                    tag = "o"
-                if msgProvider.find("message-left") != -1:
-                    got = msgProvider.find("message-left")
-                    tag = "m"
-                while msgFinder.find("</td>") == -1:
-                    msgFinder += msgProvider[got]
-                    got += 1
-                msgFinder = msgFinder.replace("</td>0", "")
+    # set up single message frames
+    for msgField in msgArea:
+        msgField.pack_forget()
+        del msgField
+    del msgArea
+    msgArea = [Frame() for _ in range(len(messages))]
 
-                # search for doc in message
-                if msgFinder.find("<a href='") != -1:
-                    dot = msgFinder.find("<a href='")
-                    dot += 9
-                    while docFinder.find("'>") == -1:
-                        docFinder += msgFinder[dot]
-                        dot += 1
-                    docFinder = docFinder.replace("'>", "")
+    # set up message widget
+    for msgField in msgMField:
+        msgField.pack_forget()
+        del msgField
+    del msgMField
+    msgMField = [Message() for _ in range(len(messages))]
 
-                msgFinder = BeautifulSoup(msgFinder, features="html.parser").text
-                msgFinder = msgFinder.replace("message-right lehrer'>", "")
-                msgFinder = msgFinder.replace("message-right '>", "")
-                msgFinder = msgFinder.replace("message-left'>", "")
+    for i, msgi in enumerate(messages):
+        speaker, msg, tag, docUrl = msgi
 
-                messages.append((speakerFinder, msgFinder, tag, docFinder))
+        nclr = ""
+        nclrF = ""
+        if tag == "o":
+            nclr = bg_color
+            nclrF = font_color
+        if tag == "t":
+            nclr = "orange"
+            nclrF = "black"
+        if tag == "m":
+            nclr = "#00B700"
+            nclrF = "black"
 
-            c = c.replace("<tr>", "<do>", 1)
+        # disp single message Frames
+        msgArea[i] = Frame(msgFrame.scrollable_frame, bg=nclr)
+        msgArea[i].pack(side="top", expand=True, fill=X)
+        Label(msgArea[i], text=speaker, font="Arial 12", bg=nclr, fg=nclrF, width=15).pack(fill=X, side="left", anchor=N)
+        if docUrl != "":
+            DwnlBtn(Button(msgArea[i], image=icons.get("pdf"), bg=nclr, activebackground=nclr, relief=FLAT, borderwidth=0, anchor=NW), docUrl).pack(side="top", expand=True, fill=X, pady=5)
+        msgMField[i] = Message(msgArea[i], text=msg, bg=nclr, fg=nclrF, font="Arial 12", anchor=NW, width=700)
+        msgMField[i].pack(expand=True, fill=X, side="left", anchor=N)
+        Frame(msgFrame.scrollable_frame, bg=bg_color, height=15).pack(side="top", expand=True, fill=X)
+        Frame(msgFrame.scrollable_frame, bg=rama_color, height=5).pack(side="top", expand=True, fill=X)
+        Frame(msgFrame.scrollable_frame, bg=bg_color, height=15).pack(side="top", expand=True, fill=X)
 
-    # check for new messages/other chat selection
-    if messages != prev_msg:
-        # set up scrollable Chat Frame
-        msgFrame.pack_forget()
-        del msgFrame.scrollable_frame
-        del msgFrame
-        msgFrame = ScrollableFrame(chatsFrame, bg=bg_color)
-        msgFrame.scrollable_frame.option_add("*background", bg_color)
+    msgFrame.pack(side="top", expand=True, fill=BOTH)
 
-        # set up single message frames
-        for msgField in msgArea:
-            msgField.pack_forget()
-            del msgField
-        del msgArea
-        msgArea = [Frame() for _ in range(len(messages))]
-
-        # set up message widget
-        for msgField in msgMField:
-            msgField.pack_forget()
-            del msgField
-        del msgMField
-        msgMField = [Message() for _ in range(len(messages))]
-
-        for i, msgi in enumerate(messages):
-            speaker, msg, tag, docUrl = msgi
-
-            nclr = ""
-            nclrF = ""
-            if tag == "o":
-                nclr = bg_color
-                nclrF = font_color
-            if tag == "t":
-                nclr = "orange"
-                nclrF = "black"
-            if tag == "m":
-                nclr = "#00B700"
-                nclrF = "black"
-
-            # disp single message Frames
-            msgArea[i] = Frame(msgFrame.scrollable_frame, bg=nclr)
-            msgArea[i].pack(side="top", expand=True, fill=X)
-            Label(msgArea[i], text=speaker, font="Arial 12", bg=nclr, fg=nclrF, width=15).pack(fill=X, side="left", anchor=N)
-            if docUrl != "":
-                DwnlBtn(Button(msgArea[i], image=icons.get("pdf"), bg=nclr, activebackground=nclr, relief=FLAT, borderwidth=0, anchor=NW), docUrl).pack(side="top", expand=True, fill=X, pady=5)
-            msgMField[i] = Message(msgArea[i], text=msg, bg=nclr, fg=nclrF, font="Arial 12", anchor=NW, width=700)
-            msgMField[i].pack(expand=True, fill=X, side="left", anchor=N)
-            Frame(msgFrame.scrollable_frame, bg=bg_color, height=15).pack(side="top", expand=True, fill=X)
-            Frame(msgFrame.scrollable_frame, bg=rama_color, height=5).pack(side="top", expand=True, fill=X)
-            Frame(msgFrame.scrollable_frame, bg=bg_color, height=15).pack(side="top", expand=True, fill=X)
-
-        msgFrame.pack(side="top", expand=True, fill=BOTH)
-
-    prev_msg = cpy.deepcopy(messages)
+prev_msg = cpy.deepcopy(messages)"""
 
 
 def display_direct():
@@ -323,35 +290,6 @@ def open_attached(href):
     pass
 
 
-# check for available internet connection
-try:
-    requests.get("http://example.org", timeout=5)
-except (requests.ConnectionError, requests.ConnectTimeout):
-    messagebox.showwarning("Keine Internetverbindung!", "Du bist nicht mit dem Internet verbunden. Stelle sicher dass du mit dem Internet verbunden ist und starte die App erneut.")
-    try:
-        requests.get("http://example.org", timeout=5)
-    except (requests.ConnectionError, requests.ConnectTimeout):
-        sys.exit(0)
-root.deiconify()
-
-
-# Setting up Frames
-loginFrame = Frame(root, bg=bg_color)
-mainFrame = Frame(root, bg=bg_color)
-stundenplanFrame = Frame(root, bg=bg_color)
-vertretungsplanFrame = Frame(root, bg=bg_color)
-terminkalenderFrame = Frame(root, bg=bg_color)
-fehlzeitenFrame = Frame(root, bg=bg_color)
-agFrame = Frame(root, bg=bg_color)
-klausurenFrame = Frame(root, bg=bg_color)
-chatsFrame = Frame(root, bg=bg_color)
-luFrame = Frame(root, bg=bg_color)
-instructionLuFrame = Frame(root, bg=bg_color)
-forStudentsFrame = Frame(root, bg=bg_color)
-surveysFrame = Frame(root, bg=bg_color)
-optionsFrame = Frame(root, bg=bg_color)
-
-
 # Window Frame Manager
 # Login Frame Manager
 def show_login():
@@ -365,9 +303,7 @@ def hide_login():
 
 
 # Main Frame Manager
-def show_main(init=False):
-    if init:
-        accoutLabel.config(text="Angemeldet als\n" + userdata.get("username"))
+def show_main():
     mainFrame.pack(expand=True, fill=BOTH)
     root.update_idletasks()
 
@@ -459,6 +395,20 @@ def hide_Klausurenplan():
 def show_chats():
     global chatUpdater, stopUpdate
     hide_main()
+
+    if not init_done.get("chats"):
+        chat_bar = BeautifulSoup(s.get(url + "chat.php").content, features="html.parser").find(id="oe_sidebar").find_all("a")
+        chat_bar.remove(chat_bar[0])
+        for chat in chat_bar:
+            href = chat.get("href")
+            txt = chat.text
+            if len(txt) > 12:
+                txt = txt[::-1].replace(" ", "\n")[::-1]
+            chatBtns.append(ChatBtn(int(href[href.find("=") + 1:]), chatsFrame, text=txt, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, relief=FLAT, font="Helvetia 14", width=10))
+            chatBtns[len(chatBtns) - 1].pack(side=TOP, anchor=W, pady=2)
+
+        init_done.update({"chats": True})
+
     chatsFrame.pack(expand=True, fill=BOTH)
     display_chat(-1)
     display_chat(-1)
@@ -534,6 +484,11 @@ def hide_surveys():
 # Options Frame Manager
 def show_options():
     hide_main()
+
+    if not init_done.get("options"):
+        accoutLabel.config(text="Angemeldet als\n" + userdata.get("username"))
+        init_done.update({"options": True})
+
     optionsFrame.pack(expand=True, fill=BOTH)
     root.update_idletasks()
 
@@ -542,6 +497,43 @@ def hide_options():
     optionsFrame.pack_forget()
     show_main()
     root.update_idletasks()
+
+
+# check for available internet connection
+try:
+    requests.get("http://example.org", timeout=5)
+except (requests.ConnectionError, requests.ConnectTimeout):
+    messagebox.showwarning("Keine Internetverbindung!", "Du bist nicht mit dem Internet verbunden. Stelle sicher dass du mit dem Internet verbunden ist und starte die App erneut.")
+    try:
+        requests.get("http://example.org", timeout=5)
+    except (requests.ConnectionError, requests.ConnectTimeout):
+        sys.exit(0)
+root.deiconify()
+
+
+# try parsing userdata from existing userdata file
+# existing userdata file
+try:
+    userdata_reader = open(tmpdir + "/userdata_client.json", "r")
+    userdata = json.load(userdata_reader)
+    userdata_reader.close()
+    del userdata_reader
+
+    # check for wrong login data
+    if check_login():
+        show_main()
+    else:
+        show_login()
+
+# non existing dir or file, incorrect userdata file
+except (FileNotFoundError, json.decoder.JSONDecodeError):
+    try:
+        # create dir
+        os.mkdir(tmpdir)
+    except FileExistsError:
+        pass
+    # show enter userdata screen
+    show_login()
 
 
 # Building Login Framework
@@ -591,7 +583,7 @@ Button(agFrame, command=hide_ag, bg=bg_color, activebackground=bg_color, font="A
 Button(klausurenFrame, command=hide_Klausurenplan, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
 
 # Building Chats Framework
-Button(chatsFrame, command=hide_chats, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(side="left", anchor=N, padx=8, pady=8)
+Button(chatsFrame, command=hide_chats, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(side="top", anchor=W, padx=8, pady=8)
 
 # Building Lernumgebung Framework
 Button(luFrame, command=hide_lernumgebung, bg=bg_color, activebackground=bg_color, font="Arial 14", relief=FLAT, highlightcolor="black", highlightthickness=2, borderwidth=0, image=icons.get("back_to_main")).pack(anchor=N+W, padx=8, pady=8)
@@ -616,29 +608,5 @@ Button(optionsFrame, text="Passwort ändern", width=16, command=change_password,
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.bind("<Alt-F4>", on_closing)
 
-
-# try parsing userdata from existing userdata file
-# existing userdata file
-try:
-    userdata_reader = open(tmpdir + "/userdata_client.json", "r")
-    userdata = json.load(userdata_reader)
-    userdata_reader.close()
-    del userdata_reader
-
-    # check for wrong login data
-    if not check_login():
-        show_login()
-    else:
-        show_main(True)
-
-# non existing dir or file, incorrect userdata file
-except (FileNotFoundError, json.decoder.JSONDecodeError):
-    try:
-        # create dir
-        os.mkdir(tmpdir)
-    except FileExistsError:
-        pass
-    # show enter userdata screen
-    show_login()
 
 root.mainloop()
