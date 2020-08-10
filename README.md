@@ -25,6 +25,11 @@ Die beiden Module werden mithilfe von pip, einem in Python beinhalteten
  Installer für Python Module installiert werden. Dazu eine Konsole öffnen und die Befehle `pip install beatifulsoup4` und `pip install requests`
  ausführen.
 
+Bei der ersten Ausführung der .exe Datei wird der Windows Defender das Ausführen blockieren. Um es zuzulassen „weitere Informationen“ anklicken und dann „Trotzdem ausführen“ auswählen.
+
+Wird die Lernumgebung Synchronisation zum ersten Mal gestartet, so müssen die benötigten Nutzerdaten angegeben werden. Das Passwortfeld ist sichgeschützt, was aber mit dem Button neben der Eingabe geändert werden kann.
+Als Synchronisationspfad wird ein Überordner angegeben (mit dem Button neben der Eingabe den Windows Pfad Dialog öffnen) In dem ausgewählten Ordner wird ein weiterer Ordner, LU Synchronisation, erstellt, in den die Lernumgebung synchronisiert wird.
+
 __ __
 
 ### RamaPortal Client
