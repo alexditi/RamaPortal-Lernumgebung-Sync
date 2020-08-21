@@ -41,8 +41,8 @@ class ToolTip(object):
 # initialize Tkinter root
 root = Tk()
 root.wm_title("LU Synchronisation")
-root.wm_minsize(300, 300)
-root.wm_maxsize(300, 300)
+root.wm_minsize(300, 330)
+root.wm_maxsize(300, 330)
 root.withdraw()
 
 
@@ -56,6 +56,8 @@ userdata = {}
 LU_dir = ""
 show_password = False
 delete_before_sync = BooleanVar()
+sync_only_new = BooleanVar()
+sync_only_new.set(TRUE)
 
 # color constants
 bg_color = "#282828"
@@ -129,56 +131,53 @@ def mk_dir(path):
 
 
 def download_file(file, dir_string):
-    global error_log
-    print("Downloading File", file.get("name"), "to", dir_string + "/" + file.get("name") + "." + file.get("typ"))
+    ext = file.get("typ")
+    buffer = b""
+    if ext == "handschriftl Notiz":
+        # not yet implemented
+        pass
+    elif ext == "tabellenkalkulation":
+        # not yet implemented
+        pass
+    elif ext == "lnk":
+        ext = ".url"
+        buffer = b"[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\nURL="
+    elif ext == "ytb":
+        ext = ".url"
+        buffer = b"[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\nURL=https://www.youtube.com/watch?v="
+    elif ext == "img":
+        ext = ".jpg"
+    elif ext == "aud":
+        ext = ".mp3"
+    elif ext == "vid":
+        ext = ".mp4"
+    elif ext == "Test":
+        # not yet implemented
+        pass
+    elif ext == "PhET simulation":
+        # not yet implemented
+        pass
+    else:
+        ext = "." + ext
 
+    if sync_only_new.get() and os.path.exists(dir_string + "/" + file.get("name") + ext):
+        return
+
+    global error_log
+    s_file = None
+    print("Downloading File", file.get("name"), "to", dir_string + "/" + file.get("name") + ext)
     # noinspection PyBroadException
     try:
-        s_file = None
         resp = s.get(url + "/edu/edufile.php?id=" + file.get("id") + "&download=1")
-        ext = file.get("typ")
-        # sort out non standard files
-        if ext == "handschriftl Notiz":
-            # not yet implemented
-            pass
-        elif ext == "tabellenkalkulation":
-            # not yet implemented
-            pass
-        elif ext == "lnk":
-            # link to internet page
-            s_file = open(dir_string + "/" + file.get("name") + ".url", "w+")
-            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\n")
-            s_file.write("URL=" + resp.text)
-        elif ext == "img":
-            # image
-            s_file = open(dir_string + "/" + file.get("name") + ".jpg", "wb+")
-            s_file.write(resp.content)
-        elif ext == "aud":
-            # audio file
-            s_file = open(dir_string + "/" + file.get("name") + ".mp3", "wb+")
-            s_file.write(resp.content)
-        elif ext == "ytb":
-            # youtube link
-            s_file = open(dir_string + "/" + file.get("name") + ".url", "w+")
-            s_file.write("[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\n")
-            s_file.write("URL=https://www.youtube.com/watch?v=" + resp.text)
-        elif ext == "vid":
-            # video file
-            s_file = open(dir_string + "/" + file.get("name") + ".mp4", "wb+")
-            s_file.write(resp.content)
-        elif ext == "Test":
-            # not yet implemented
-            pass
-        elif ext == "PhET simulation":
-            # not yet implemented
-            pass
-        else:
-            # ext is a valid file extension
-            s_file = open(dir_string + "/" + file.get("name") + "." + ext, "wb+")
-            s_file.write(resp.content)
-        s_file.close()
+        s_file = open(dir_string + "/" + file.get("name") + ext, "wb+")
+        s_file.write(buffer)
+        s_file.write(resp.content)
     except Exception as ex:
         error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
+    try:
+        s_file.close()
+    except AttributeError:
+        pass
 
 
 def get_material_list(href):
@@ -195,6 +194,7 @@ def syncLU(destroy=False):
     settings_btn.config(state=DISABLED)
     sync_btn.config(state=DISABLED)
     delete_cb.config(state=DISABLED)
+    sync_new_cb.config(state=DISABLED)
 
     if delete_before_sync.get() and messagebox.askyesno("Ordner löschen?", 'Soll wirklich der gesamte Ordner "Lernumgebung OfflineSync" gelöscht werden? Auch eigens hinzugefügte Dateien werden gelöscht.'):
         try:
@@ -297,6 +297,7 @@ def syncLU(destroy=False):
     settings_btn.config(state=NORMAL)
     sync_btn.config(state=NORMAL)
     delete_cb.config(state=NORMAL)
+    sync_new_cb.config(state=NORMAL)
 
     if destroy:
         root.quit()
@@ -324,8 +325,13 @@ sync_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 cb_frame = Frame(main_frame)
 delete_cb = Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color, v=delete_before_sync)
 delete_cb.pack(side=LEFT)
-Label(cb_frame, text="Ordner vor Update löschen", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=BOTH)
-cb_frame.pack(pady=15, padx=8, anchor=W, side=TOP)
+Label(cb_frame, text="Ordner vor Update löschen", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=Y)
+cb_frame.pack(pady=5, padx=8, anchor=W, side=TOP)
+cb_frame1 = Frame(main_frame)
+sync_new_cb = Checkbutton(cb_frame1, bg=bg_color, activebackground=bg_color, v=sync_only_new)
+sync_new_cb.pack(side=LEFT, anchor=S)
+Label(cb_frame1, text="Nur neue Dateien synchronisieren", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=Y)
+cb_frame1.pack(pady=5, padx=8, anchor=W, side=TOP)
 sync_frame = Frame(main_frame, bg=rama_color, width=250, height=150)
 sync_frame.pack_propagate(0)
 progress_label = Label(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 14 bold", text="")
