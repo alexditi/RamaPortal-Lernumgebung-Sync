@@ -153,7 +153,6 @@ def download_file(file, dir_string):
         ext = ".mp4"
     elif ext == "download":
         ext = ""
-        print("DOWNLOAD!")
     elif ext == "Test":
         # not yet implemented
         pass
