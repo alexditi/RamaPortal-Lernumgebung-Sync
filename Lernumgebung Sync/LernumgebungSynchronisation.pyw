@@ -2,6 +2,7 @@ import requests
 import os
 import json
 import shutil
+import webbrowser
 from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
@@ -58,6 +59,8 @@ show_password = False
 delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
+
+version = "v3.6"
 
 # color constants
 bg_color = "#282828"
@@ -307,16 +310,17 @@ def syncLU(destroy=False):
 
 
 # check for available internet connection
+v = None
 try:
-    requests.get("http://example.org", timeout=5)
+    v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
 except (requests.ConnectionError, requests.ConnectTimeout):
     messagebox.showwarning("Keine Internetverbindung!", "Du bist nicht mit dem Internet verbunden. Stelle sicher dass du mit dem Internet verbunden ist und starte die App erneut.")
     try:
-        requests.get("http://example.org", timeout=5)
+        v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
     except (requests.ConnectionError, requests.ConnectTimeout):
         sys.exit(0)
-root.deiconify()
 
+root.deiconify()
 
 # main Frame
 main_frame = Frame(root, bg=bg_color)
@@ -398,5 +402,9 @@ except (FileNotFoundError, json.decoder.JSONDecodeError):
 
 if len(sys.argv) > 1 and sys.argv[1] == "-startup":
     Thread(target=lambda: syncLU(True)).start()
+else:
+    updateLog = json.loads(v.text)
+    if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Zum Download?"):
+        webbrowser.open("https://github.com/alexditi/RamaPortalClientsided-Projects/releases/tag/" +  updateLog.get("version"))
 
 root.mainloop()
