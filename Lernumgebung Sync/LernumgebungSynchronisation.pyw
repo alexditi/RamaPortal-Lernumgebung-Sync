@@ -134,6 +134,10 @@ def mk_dir(path):
 
 
 def download_file(file, dir_string):
+    # exclude broken file
+    if file.get("name") == "Hallo ihr Lieben, diese Woche beschäftigt ihr euch mit der Gegenreformation.  Dazu erarbeitet ihr die folgenden Aufgaben   1. Informiert euch mit Hilfe des Buches über die einzelnen Schritte der Gegenreformationen (S. 107). 2. S. 113  M3. Aufgabe 1  Arbeiten Sie aus dem Gutachten die Handlungsmöglichkeiten heraus, die der Stadtrat entwickelt. 2. Beurteilt die Bedeutung der Konfessionalisierung für den frühmodernen Staat (S. 108-110).":
+        return
+
     ext = file.get("typ")
     buffer = b""
     if ext == "handschriftl Notiz":
