@@ -416,7 +416,7 @@ else:
 
         # get updater
         up_app = open(tmpdir + "/updater.bat", "w+")
-        up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/master/Lernumgebung Sync/updater.bat").text.replace("install_to", '"' + __file__ + '"'))
+        up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/master/Lernumgebung Sync/updater.bat").text.replace("__file__", '"' + __file__ + '"'[:__file__.find("LernumgebungSynchronisation.")]))
         up_app.close()
 
         # run updater
