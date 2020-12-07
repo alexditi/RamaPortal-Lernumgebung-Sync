@@ -410,21 +410,8 @@ else:
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         # update application
         # get version
-        up_app = open(tmpdir + "/LernumgebungSynchronisation.exe", "wb+")
+        up_app = open(os.environ["userprofile"] + "/Downloads/LernumgebungSynchronisation.exe", "wb+")
         up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/" + updateLog.get("version") + "/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
         up_app.close()
-
-        # get updater
-        up_app = open(tmpdir + "/updater.bat", "w+")
-        bat_text = requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/master/Lernumgebung Sync/updater.bat").text
-        bat_text = bat_text.replace("install_to", '"' + __file__[:__file__.find("LernumgebungSynchronisation.")] + '"')
-        bat_text = bat_text.replace("old_file", '"' + __file__.replace(".pyw", ".exe") + '"')
-        up_app.write(bat_text)
-        up_app.close()
-
-        # run updater
-        import subprocess
-        subprocess.Popen([tmpdir + "/updater.bat"], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
-        exit(1)
 
 root.mainloop()
