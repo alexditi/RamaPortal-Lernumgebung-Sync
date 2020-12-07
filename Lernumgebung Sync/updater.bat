@@ -1,3 +1,3 @@
 @echo off
-set path=tmpdir
-ping localhost -n 2
+@set install_to=tmpdir
+@ping localhost -n 2
