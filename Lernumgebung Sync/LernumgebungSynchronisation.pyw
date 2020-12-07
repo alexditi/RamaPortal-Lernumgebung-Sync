@@ -415,12 +415,13 @@ else:
         up_app.close()
 
         # get updater
-        up_app = open(tmpdir + "/updater.bat", "wb+")
-        up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/").content)
+        up_app = open(tmpdir + "/updater.bat", "w+")
+        up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/master/Lernumgebung Sync/updater.bat").text.replace("tmpdir", tmpdir))
         up_app.close()
 
         # run updater
         import subprocess
-        subprocess.Popen([tmpdir + "updater.bat"], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+        subprocess.Popen([tmpdir + "/updater.bat"], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+        exit(1)
 
 root.mainloop()
