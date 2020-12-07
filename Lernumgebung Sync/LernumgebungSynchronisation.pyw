@@ -2,7 +2,6 @@ import requests
 import os
 import json
 import shutil
-import webbrowser
 from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
@@ -60,7 +59,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v3.8"
+version = "v3.7"
 
 # color constants
 bg_color = "#282828"
@@ -130,7 +129,7 @@ def mk_dir(path):
         except FileExistsError:
             pass
     except Exception as ex:
-        error_log.append(("Folender Pfad konnte nicht erstellt werden: ", ex, path))
+        error_log.append(("Folgender Pfad konnte nicht erstellt werden: ", ex, path))
 
 
 def download_file(file, dir_string):
@@ -317,11 +316,11 @@ def syncLU(destroy=False):
 v = None
 try:
     v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
-except (requests.ConnectionError, requests.ConnectTimeout):
+except (requests.ConnectionError, requests.Timeout):
     messagebox.showwarning("Keine Internetverbindung!", "Du bist nicht mit dem Internet verbunden. Stelle sicher dass du mit dem Internet verbunden ist und starte die App erneut.")
     try:
         v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
-    except (requests.ConnectionError, requests.ConnectTimeout):
+    except (requests.ConnectionError, requests.Timeout):
         sys.exit(0)
 
 root.deiconify()
@@ -408,7 +407,20 @@ if len(sys.argv) > 1 and sys.argv[1] == "-startup":
     Thread(target=lambda: syncLU(True)).start()
 else:
     updateLog = json.loads(v.text)
-    if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Zum Download?"):
-        webbrowser.open("https://github.com/alexditi/RamaPortalClientsided-Projects/releases/tag/" +  updateLog.get("version"))
+    if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
+        # update application
+        # get version
+        up_app = open(tmpdir + "/LernumgebungSynchronisation.exe", "wb+")
+        up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/" + updateLog.get("version") + "/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
+        up_app.close()
+
+        # get updater
+        up_app = open(tmpdir + "/updater.bat", "wb+")
+        up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/").content)
+        up_app.close()
+
+        # run updater
+        import subprocess
+        subprocess.Popen([tmpdir + "updater.bat"], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
 
 root.mainloop()
