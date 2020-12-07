@@ -59,7 +59,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v3.7"
+version = "v3.9"
 
 # color constants
 bg_color = "#282828"
@@ -413,5 +413,8 @@ else:
         up_app = open(os.environ["userprofile"] + "/Downloads/LernumgebungSynchronisation.exe", "wb+")
         up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/" + updateLog.get("version") + "/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
         up_app.close()
+
+        messagebox.showinfo("Download abgeschlossen", "Die neue Datei ist im Download Ordner zu finden und kann benutzt werden. Die alte Datei kann gelöscht werden.")
+        exit(1)
 
 root.mainloop()
