@@ -423,8 +423,8 @@ else:
         up_app.close()
 
         # run updater
-        # import subprocess
-        # subprocess.Popen([tmpdir + "/updater.bat"], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+        import subprocess
+        subprocess.Popen([tmpdir + "/updater.bat"], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
         exit(1)
 
 root.mainloop()
