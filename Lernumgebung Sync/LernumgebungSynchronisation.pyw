@@ -59,7 +59,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v3.9"
+version = "v4.1"
 
 # color constants
 bg_color = "#282828"
@@ -253,20 +253,24 @@ def syncLU(destroy=False):
                         # parsing key "name" to conform w10 path decoding
                         file_name = current_file.get("name").replace("/", " ").replace("\\", "").replace(
                             ":", " ").replace("*", " ").replace("?", " ").replace('"', " ").replace("<", " ").replace(
-                            ">", "").replace("|", "")
+                            ">", "").replace("|", "").replace("&amp;", "&").replace("&quot;", ' ').replace(
+                            "&apos;", "'").replace("&lt;", "").replace("&gt;", " ")
                         while file_name[len(file_name) - 1] == " ":
                             file_name = file_name[:-1]
                         current_file.update({"name": file_name})
+                        print(current_file.get("name"))
 
                         if current_file.get("typ") == "dir":
                             # directory
                             dir_string += "/" + current_file.get("name")
                             mk_dir(dir_string)
-                            current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=publ&dir=" + current_file.get("id"))
+                            current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=" + sect + "&dir=" + current_file.get("id"))
                             n = 0
                             print("changed dir to", current_file.get("name"))
                             info_label.config(text=current_file.get("name"))
                             root.update_idletasks()
+                        elif current_file.get("typ") == "diropen":
+                            pass
                         else:
                             # file
                             dir_stack.get()
@@ -409,7 +413,6 @@ else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         # update application
-        # get version
         up_app = open(os.environ["userprofile"] + "/Downloads/LernumgebungSynchronisation.exe", "wb+")
         up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/" + updateLog.get("version") + "/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
         up_app.close()
