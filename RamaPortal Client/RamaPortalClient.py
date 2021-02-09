@@ -173,7 +173,7 @@ def logout():
 
 
 def change_password():
-    # r1 = s.post(url + "index.php?passwd=1", {"altKennwort": "sander", "neuKennwort": "sander2003", "neu2Kennwort": "sander2003"})
+    # r1 = s.post(url + "index.php?passwd=1", {"altKennwort": "password_old", "neuKennwort": "password_new", "neu2Kennwort": "password_new"})
     messagebox.showinfo("Noch nicht verfügbar", "Dieses Feature ist aktuell noch nicht verfügbar.")
 
 
