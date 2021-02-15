@@ -20,7 +20,7 @@ class ToolTip(object):
         self.widget.bind("<Enter>", self.showtip)
         self.widget.bind("<Leave>", self.hidetip)
 
-    def showtip(self, event):
+    def showtip(self, _event):
         if self.tipwindow or not self.text:
             return
         x = self.widget.winfo_rootx() + 37
@@ -31,7 +31,7 @@ class ToolTip(object):
         label = Label(tw, text=self.text, justify=LEFT, background=bg_color, foreground=font_color, relief=SOLID, borderwidth=1, font="Helvetia 8")
         label.pack(ipadx=1)
 
-    def hidetip(self, event):
+    def hidetip(self, _event):
         tw = self.tipwindow
         self.tipwindow = None
         if tw:
@@ -73,7 +73,7 @@ def check_login():
             "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
 
 
-def submit_userdata(event=""):
+def submit_userdata(_event=""):
     global userdata_reader, userdata, LU_dir
     userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
     json.dump({"username": username_entry.get(), "password": password_entry.get(), "dir": dir_entry.get()}, userdata_creator)
@@ -133,12 +133,8 @@ def mk_dir(path):
 
 
 def download_file(file, dir_string):
-    # exclude broken file
-    if file.get("name") == "Hallo ihr Lieben, diese Woche beschäftigt ihr euch mit der Gegenreformation.  Dazu erarbeitet ihr die folgenden Aufgaben   1. Informiert euch mit Hilfe des Buches über die einzelnen Schritte der Gegenreformationen (S. 107). 2. S. 113  M3. Aufgabe 1  Arbeiten Sie aus dem Gutachten die Handlungsmöglichkeiten heraus, die der Stadtrat entwickelt. 2. Beurteilt die Bedeutung der Konfessionalisierung für den frühmodernen Staat (S. 108-110).":
-        return
-
     ext = file.get("typ")
-    buffer = b""
+    wrapper = b""
     if ext == "handschriftl Notiz":
         # not yet implemented
         pass
@@ -147,10 +143,10 @@ def download_file(file, dir_string):
         pass
     elif ext == "lnk":
         ext = ".url"
-        buffer = b"[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\nURL="
+        wrapper = b"[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\nURL=file_content"
     elif ext == "ytb":
         ext = ".url"
-        buffer = b"[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\nURL=https://www.youtube.com/watch?v="
+        wrapper = b"[{000214A0-0000-0000-C000-000000000046}]\nProp3=19,11\n[InternetShortcut]\nIDList=\nURL=https://www.youtube.com/watch?v=file_content"
     elif ext == "img":
         ext = ".jpg"
     elif ext == "aud":
@@ -159,6 +155,9 @@ def download_file(file, dir_string):
         ext = ".mp4"
     elif ext == "download":
         ext = ""
+    elif ext == "html":
+        ext = ".html"
+        wrapper = b"<head><style>body {font-family: Arial;}</style></head><body>file_content</body>"
     elif ext == "Test":
         # not yet implemented
         pass
@@ -167,6 +166,7 @@ def download_file(file, dir_string):
         pass
     else:
         ext = "." + ext
+        wrapper = b"file_content"
 
     if sync_only_new.get() and os.path.exists(dir_string + "/" + file.get("name") + ext):
         return
@@ -178,8 +178,7 @@ def download_file(file, dir_string):
     try:
         resp = s.get(url + "/edu/edufile.php?id=" + file.get("id") + "&download=1")
         s_file = open(dir_string + "/" + file.get("name") + ext, "wb+")
-        s_file.write(buffer)
-        s_file.write(resp.content)
+        s_file.write(wrapper.replace(b"file_content", resp.content))
     except Exception as ex:
         error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
     try:
@@ -375,6 +374,7 @@ browse_btn.pack(side=RIGHT)
 dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
 Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_userdata).pack(fill=X, anchor=N, padx=30, pady=10)
+Label(userdata_frame, fg=font_color, bg=bg_color, text=version, font="Helvetia 10 bold").pack(side=LEFT, pady=2, padx=2)
 username_entry.bind("<Return>", submit_userdata)
 password_entry.bind("<Return>", submit_userdata)
 dir_entry.bind("Return", submit_userdata)
