@@ -61,7 +61,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v5.1"
+version = "v5.2"
 
 # color constants
 bg_color = "#282828"
@@ -415,7 +415,7 @@ else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         # download updater
-        updater = open(tmpdir + "LU_updater.exe", "wb+")
+        updater = open(tmpdir + "/LU_updater.exe", "wb+")
         updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
         updater.close()
 
