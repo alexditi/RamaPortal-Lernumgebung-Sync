@@ -2,11 +2,13 @@ import requests
 import os
 import json
 import shutil
+import subprocess
 from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
 from tkinter import messagebox, filedialog
 from threading import Thread
+from time import sleep
 
 
 # tooltip class
@@ -59,7 +61,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v4.3"
+version = "v4.4"
 
 # color constants
 bg_color = "#282828"
@@ -221,6 +223,7 @@ def syncLU(destroy=False):
             groupList.append(groupmanager[groupmanager.find("title='") + 7:groupmanager.find("class='felem'") - 7])
             groupmanager = groupmanager.replace("title=", "", 1).replace("class='felem'", "", 1)
             groupList.append(groupmanager[groupmanager.find("gruppe=") + 7:groupmanager.find("&section")])
+
             groupmanager = groupmanager.replace("gruppe=", "", 1).replace("&section", "", 1)
 
         # get each group's file directory
@@ -411,12 +414,15 @@ if len(sys.argv) > 1 and sys.argv[1] == "-startup":
 else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
-        # update application
-        up_app = open(os.environ["userprofile"] + "/Downloads/LernumgebungSynchronisation.exe", "wb+")
-        up_app.write(requests.get("https://github.com/alexditi/RamaPortalClientsided-Projects/raw/" + updateLog.get("version") + "/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
-        up_app.close()
+        # download updater
+        updater = open(tmpdir + "LU_updater.exe", "wb+")
+        updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
+        updater.close()
 
-        messagebox.showinfo("Download abgeschlossen", "Die neue Datei ist im Download Ordner zu finden und kann benutzt werden. Die alte Datei kann gelöscht werden.")
-        exit(1)
+        # start updater
+        subprocess.Popen([tmpdir + "/LU_updater.exe", os.path.abspath(__file__).replace("\\", "/").replace(".py", ".exe"), updateLog.get("version")], shell=False, stdin=None, stdout=None, stderr=None, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+        sleep(1)
+        root.destroy()
+        exit(0)
 
 root.mainloop()
