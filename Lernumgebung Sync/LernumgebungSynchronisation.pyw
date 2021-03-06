@@ -134,7 +134,7 @@ def mk_dir(path):
 
 def download_file(file, dir_string):
     ext = file.get("typ")
-    wrapper = b""
+    wrapper = b"file_content"
     if ext == "handschriftl Notiz":
         # not yet implemented
         pass
@@ -166,7 +166,6 @@ def download_file(file, dir_string):
         pass
     else:
         ext = "." + ext
-        wrapper = b"file_content"
 
     if sync_only_new.get() and os.path.exists(dir_string + "/" + file.get("name") + ext):
         return
