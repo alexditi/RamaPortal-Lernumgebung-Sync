@@ -15,11 +15,11 @@ __ __
 Ordner "Lernumgebung Sync"
 
 Für die Lernumgebung Offline Synchronisation ist für Windows 10 (64bit) eine .exe Datei vorhanden. Diese kann einfach benutzt und per Doppelklick ausgeführt
-werden.
+werden.  
+Die Datei LU_updater.exe ist die Update Datei der Lernumgebung Synchronisation und wird nicht benötigt. Sie ist nur in diesem Verzeichnis auf GitHub, damit sie, falls eine neue Versio verfügbar ist, von dre Lernumgebung Synchronisation heruntergeladen werden kann und das Update selbstständig ausführt. Die LU_updater.exe Datei kann außerdem nicht ohne weiteres selbstständig ausgeführt werden.
 
-Für andere Betriebssysteme, oder falls der Sourcecode genutzt werden möchte, kann die .pyw Datei genutzt werden. Dafür müssen aber Python und
-die beiden Module `beautifulsoup4` und `requests` installiert sein. [Python](https://www.python.org/downloads/ "Zum Python Download") kann auf
-der eigenen Website gedownloaded und nach Anleitung installiert werden.
+Der Sourcecode ist auch erhältlich. Die Datei LernumgebungSynchronisation.pyw ist die Python Datei, die über eine gängige [Python Installation](https://www.python.org/downloads/ "Zum Python Download") ausgeführt werden kann. Zusätzlich müssen die beiden Module 'requests' und 'beautifulsoup4' installiert werden. Der Python Sourcecode läuft aktuell auch nur über Windows, da auf die Windows PATH-Variablen zugegriffen wird. (Auf anderweitigen Betriebssystemen wurde es zwar noch nicht getestet, es sollte aber eine Fehlermeldung auftreten). Auch für den Updater ist der Soucecode unter LU_updater.py vorhanden.
+
 
 Die beiden Module werden mithilfe von pip, einem in Python beinhalteten
  Installer für Python Module installiert werden. Dazu eine Konsole öffnen und die Befehle `pip install beatifulsoup4` und `pip install requests`
