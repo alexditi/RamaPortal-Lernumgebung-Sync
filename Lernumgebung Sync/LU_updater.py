@@ -36,9 +36,10 @@ def close():
 root = Tk()
 root.wm_title("LU Sync Updater")
 root.wm_minsize(100, 100)
+root.iconbitmap("logo_rama.ico")
 
 main_frame = Frame(root, bg=bg_color)
-info_label = Label(main_frame, text="Lernumgebung Synchronisation Updater", bg = bg_color, fg=font_color, font="Helvetia 13")
+info_label = Label(main_frame, text="Lernumgebung Synchronisation Updater", bg=bg_color, fg=font_color, font="Helvetia 13")
 info_label.pack(padx=5, pady=7)
 update_btn = Button(main_frame, text="Update starten", command=update, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, font="Helvetia 13 bold", relief=FLAT)
 update_btn.pack(side=BOTTOM, pady=5)

@@ -46,6 +46,7 @@ root.wm_title("LU Synchronisation")
 root.wm_minsize(300, 330)
 root.wm_maxsize(300, 330)
 root.withdraw()
+root.iconbitmap("logo_rama.ico")
 
 
 # some global variables
