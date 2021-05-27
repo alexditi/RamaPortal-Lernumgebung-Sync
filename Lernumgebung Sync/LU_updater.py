@@ -1,6 +1,7 @@
 from tkinter import *
 import requests
 import subprocess
+import os
 from time import sleep
 
 # color constants
@@ -36,7 +37,14 @@ def close():
 root = Tk()
 root.wm_title("LU Sync Updater")
 root.wm_minsize(100, 100)
-root.iconbitmap("logo_rama.ico")
+
+# search for icon
+# noinspection PyBroadException
+try:
+    base_path = sys._MEIPASS + "\\"
+except Exception:
+    base_path = ""
+root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
 main_frame = Frame(root, bg=bg_color)
 info_label = Label(main_frame, text="Lernumgebung Synchronisation Updater", bg=bg_color, fg=font_color, font="Helvetia 13")

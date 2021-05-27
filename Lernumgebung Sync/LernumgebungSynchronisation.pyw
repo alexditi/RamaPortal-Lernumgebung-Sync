@@ -46,8 +46,14 @@ root.wm_title("LU Synchronisation")
 root.wm_minsize(300, 330)
 root.wm_maxsize(300, 330)
 root.withdraw()
-root.iconbitmap("logo_rama.ico")
 
+# search for icon
+# noinspection PyBroadException
+try:
+    base_path = sys._MEIPASS + "\\"
+except Exception:
+    base_path = ""
+root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
 # some global variables
 tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
@@ -62,7 +68,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v5.2"
+version = "v5.3"
 
 # color constants
 bg_color = "#282828"
