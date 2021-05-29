@@ -108,11 +108,13 @@ def submit_userdata(_event=""):
 def launch_updater(vs):
     # download updater
     updater = open(tmpdir + "/LU_updater.exe", "wb+")
-    updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
+    # updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
+    updater.write(requests.get(
+        "https://github.com/alexditi/RamaPortalClientsided-Projects/raw/master/Lernumgebung Sync/LU_updater.exe").content)
     updater.close()
 
     # start updater
-    subprocess.Popen([tmpdir + "/LU_updater.exe", os.path.abspath(__file__).replace("\\", "/").replace(".py", ".exe"), vs],
+    subprocess.Popen([tmpdir + "/LU_updater.exe", os.path.abspath(__file__).replace("\\", "/").replace(".pyw", ".exe").replace(".py", ".exe"), vs],
                      shell=False, stdin=None, stdout=None, stderr=None, close_fds=True,
                      creationflags=subprocess.DETACHED_PROCESS)
     sleep(1)
