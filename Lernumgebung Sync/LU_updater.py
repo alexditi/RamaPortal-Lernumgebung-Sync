@@ -18,7 +18,7 @@ def update():
     update_btn.config(state=DISABLED)
     info_label.config(text="Downloading new file LernumgebungSynchronisation.exe")
     root.update_idletasks()
-    with open(arg_path, "wb+") as new_file:
+    with open(path.get(), "wb+") as new_file:
         new_file.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{version.get()}/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
     info_label.config(text="Installation abgeschlossen")
     root.update_idletasks()
