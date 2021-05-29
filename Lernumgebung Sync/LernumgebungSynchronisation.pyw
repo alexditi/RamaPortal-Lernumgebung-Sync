@@ -105,6 +105,21 @@ def submit_userdata(_event=""):
         messagebox.showerror("Anmeldung fehlgeschlagen!", "Falscher Benutzername oder Passwort")
 
 
+def launch_updater(vs):
+    # download updater
+    updater = open(tmpdir + "/LU_updater.exe", "wb+")
+    updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
+    updater.close()
+
+    # start updater
+    subprocess.Popen([tmpdir + "/LU_updater.exe", os.path.abspath(__file__).replace("\\", "/").replace(".py", ".exe"), vs],
+                     shell=False, stdin=None, stdout=None, stderr=None, close_fds=True,
+                     creationflags=subprocess.DETACHED_PROCESS)
+    sleep(1)
+    root.destroy()
+    exit(0)
+
+
 def insert_dir():
     dir_entry.delete(0, END)
     dir_entry.insert(0, filedialog.askdirectory())
@@ -383,7 +398,7 @@ browse_btn.pack(side=RIGHT)
 dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
 Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_userdata).pack(fill=X, anchor=N, padx=30, pady=10)
-Label(userdata_frame, fg=font_color, bg=bg_color, text=version, font="Helvetia 10 bold").pack(side=LEFT, pady=2, padx=2)
+Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=bg_color, activebackground=bg_color, text=version, font="Helvetia 10 bold", relief=FLAT, command=lambda: launch_updater(version)).pack(side=LEFT, pady=2, padx=2)
 username_entry.bind("<Return>", submit_userdata)
 password_entry.bind("<Return>", submit_userdata)
 dir_entry.bind("Return", submit_userdata)
@@ -421,15 +436,6 @@ if len(sys.argv) > 1 and sys.argv[1] == "-startup":
 else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
-        # download updater
-        updater = open(tmpdir + "/LU_updater.exe", "wb+")
-        updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
-        updater.close()
-
-        # start updater
-        subprocess.Popen([tmpdir + "/LU_updater.exe", os.path.abspath(__file__).replace("\\", "/").replace(".py", ".exe"), updateLog.get("version")], shell=False, stdin=None, stdout=None, stderr=None, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
-        sleep(1)
-        root.destroy()
-        exit(0)
+        launch_updater(updateLog.get("version"))
 
 root.mainloop()
