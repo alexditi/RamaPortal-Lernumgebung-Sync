@@ -40,6 +40,9 @@ class ToolTip(object):
             tw.destroy()
 
 
+# frozen executable check
+frozen = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
 # initialize Tkinter root
 root = Tk()
 root.wm_title("LU Synchronisation")
@@ -48,15 +51,14 @@ root.wm_maxsize(300, 330)
 root.withdraw()
 
 # search for icon
-# noinspection PyBroadException
-try:
+if frozen:
     base_path = sys._MEIPASS + "\\"
-except Exception:
+else:
     base_path = ""
 root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
 # some global variables
-tmpdir = os.environ["localappdata"].replace("\\", "/") + "/RamaPortal Client"
+tmpdir = os.environ["localappdata"] + "\\RamaPortal Client"
 url = "https://portal.rama-mainz.de"
 s = requests.Session()
 error_log = []
@@ -68,7 +70,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v5.4"
+version = "v5.5"
 
 # color constants
 bg_color = "#282828"
@@ -105,18 +107,18 @@ def submit_userdata(_event=""):
         messagebox.showerror("Anmeldung fehlgeschlagen!", "Falscher Benutzername oder Passwort")
 
 
-def launch_updater(vs):
+def launch_updater(_version):
     # download updater
-    updater = open(tmpdir + "/LU_updater.exe", "wb+")
-    # updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
-    updater.write(requests.get(
-        "https://github.com/alexditi/RamaPortalClientsided-Projects/raw/master/Lernumgebung Sync/LU_updater.exe").content)
-    updater.close()
+    with open(tmpdir + "/LU_updater.exe", "wb+") as updater:
+        updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
 
     # start updater
-    subprocess.Popen([tmpdir + "/LU_updater.exe", os.path.abspath(__file__).replace("\\", "/").replace(".pyw", ".exe").replace(".py", ".exe"), vs],
-                     shell=False, stdin=None, stdout=None, stderr=None, close_fds=True,
-                     creationflags=subprocess.DETACHED_PROCESS)
+    if frozen:
+        running_file_path = sys.executable
+    else:
+        running_file_path = os.path.abspath(__file__).replace("\\", "/").replace(".pyw", ".exe").replace(".py", ".exe")
+    subprocess.Popen([tmpdir + "/LU_updater.exe", running_file_path, _version], shell=False, stdin=None, stdout=None,
+                     stderr=None, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
     sleep(1)
     root.destroy()
     exit(0)
