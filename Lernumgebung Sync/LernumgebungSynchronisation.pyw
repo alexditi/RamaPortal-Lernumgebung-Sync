@@ -232,7 +232,7 @@ def syncLU(destroy=False):
 
     if delete_before_sync.get() and messagebox.askyesno("Ordner löschen?", 'Soll wirklich der gesamte Ordner "Lernumgebung OfflineSync" gelöscht werden? Auch eigens hinzugefügte Dateien werden gelöscht.'):
         try:
-            info_label.config(text="lösche alten Ordner")
+            info_label.config(text="Lösche alten Ordner")
             root.update()
             shutil.rmtree(LU_dir)
         except FileNotFoundError:
@@ -348,7 +348,7 @@ v = None
 try:
     v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
 except (requests.ConnectionError, requests.Timeout):
-    messagebox.showwarning("Keine Internetverbindung!", "Du bist nicht mit dem Internet verbunden. Stelle sicher dass du mit dem Internet verbunden ist und starte die App erneut.")
+    messagebox.showwarning("Keine Internetverbindung!", "Stelle sicher, dass du eine Internetverbindung hast und starte die App erneut.")
     try:
         v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
     except (requests.ConnectionError, requests.Timeout):
