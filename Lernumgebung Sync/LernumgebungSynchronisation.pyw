@@ -70,7 +70,7 @@ delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 
-version = "v5.7"
+version = "v5.8"
 
 # color constants
 bg_color = "#282828"
