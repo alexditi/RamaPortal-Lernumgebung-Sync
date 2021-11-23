@@ -13,27 +13,38 @@ from time import sleep
 
 # tooltip class
 class ToolTip(object):
+    """
+    Tool Tip Klasse: Zeigt neben einem Tkinter Widget einen Text an, wenn man über dieses mit dem Zeiger fährt.
+    """
 
-    def __init__(self, widget, text):
+    def __init__(self, widget: BaseWidget, text: str) -> None:
+        """
+        Tooltip Klasse: Zeigt neben dem Tkinter Widget einen Text an, wenn man über das Widget mit dem Mauszeiger
+        fährt.
+
+        :param widget: Parent Widget des Tooltips, für das der Tooltip angezeigt wird.
+        :param text: Der anzuzeigende Text.
+        """
+
         self.text = text
         self.widget = widget
         self.tipwindow = None
         self.x = self.y = 0
-        self.widget.bind("<Enter>", self.showtip)
-        self.widget.bind("<Leave>", self.hidetip)
+        self.widget.bind("<Enter>", self._showtip)
+        self.widget.bind("<Leave>", self._hidetip)
 
-    def showtip(self, _event):
+    def _showtip(self, _event: Event) -> None:
         if self.tipwindow or not self.text:
             return
         x = self.widget.winfo_rootx() + 37
         y = self.widget.winfo_rooty() + 27
         self.tipwindow = tw = Toplevel(self.widget)
         tw.wm_overrideredirect(1)
-        tw.wm_geometry("+%d+%d" % (x, y))
+        tw.wm_geometry(f"+{x}+{y}")
         label = Label(tw, text=self.text, justify=LEFT, background=bg_color, foreground=font_color, relief=SOLID, borderwidth=1, font="Helvetia 8")
         label.pack(ipadx=1)
 
-    def hidetip(self, _event):
+    def _hidetip(self, _event: Event) -> None:
         tw = self.tipwindow
         self.tipwindow = None
         if tw:
@@ -50,25 +61,25 @@ root.wm_minsize(300, 330)
 root.wm_maxsize(300, 330)
 root.withdraw()
 
-# search for icon
+# get icon file and apply it to the root window
 if frozen:
-    base_path = sys._MEIPASS + "\\"
+    base_path = f"{sys._MEIPASS}\\"
 else:
     base_path = ""
 root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
 # some global variables
-tmpdir = os.environ["localappdata"] + "\\RamaPortal Client"
+tmpdir = f"{os.environ.get('localappdata')}\\RamaPortal Client"
 url = "https://portal.rama-mainz.de"
 s = requests.Session()
 error_log = []
-userdata_reader = ""
 userdata = {}
 LU_dir = ""
 show_password = False
 delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
+previous_dir = None
 
 version = "v5.8"
 
@@ -79,37 +90,28 @@ rama_color = "#A51320"
 rama_color_active = "#9E1220"
 
 
-def check_login():
-    return not (BeautifulSoup(s.post(url + "/index.php", {"username": userdata.get("username"), "password": userdata.get(
+def check_login() -> bool:
+    """
+    Diese Methode überprüft die aktuellen Anmeldedaten.
+
+    :return: True, wenn die Anmeldung mit den aktuellen Benutzerdaten erfolgreich war, andernfalls False
+    """
+
+    return not (BeautifulSoup(s.post(f"{url}/index.php", {"username": userdata.get("username"), "password": userdata.get(
             "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
 
 
-def submit_userdata(_event=""):
-    global userdata_reader, userdata, LU_dir
-    userdata_creator = open(tmpdir + "/userdata_LU.json", "w+")
-    json.dump({"username": username_entry.get(), "password": password_entry.get(), "dir": dir_entry.get()}, userdata_creator)
-    userdata_creator.close()
-    del userdata_creator
-    # open reader
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
-    userdata = json.load(userdata_reader)
-    userdata_reader.close()
-    del userdata_reader
-    LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
-    if check_login():
-        s.get(url + "/index.php?abmelden=1")
-    if check_login():
-        userdata_frame.pack_forget()
-        main_frame.pack(expand=True, fill=BOTH)
-    else:
-        username_entry.delete(0, END)
-        password_entry.delete(0, END)
-        messagebox.showerror("Anmeldung fehlgeschlagen!", "Falscher Benutzername oder Passwort")
+def launch_updater() -> None:
+    """
+    Das Updater Script wird heruntergeladen und ausgeführt. Als Argumente werden der Pfad zum alten LU Sync Script und
+    die neueste Version übergeben, die neueste Version wird dem UpdateLog entnommen. Der Updater wird als eigenständiger
+    subprocess gestartet und der LU Sync Script wird beendet.
 
+    :return: None
+    """
 
-def launch_updater(_version):
     # download updater
-    with open(tmpdir + "/LU_updater.exe", "wb+") as updater:
+    with open(f"{tmpdir}/LU_updater.exe", "wb+") as updater:
         updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
 
     # start updater
@@ -117,30 +119,102 @@ def launch_updater(_version):
         running_file_path = sys.executable
     else:
         running_file_path = os.path.abspath(__file__).replace("\\", "/").replace(".pyw", ".exe").replace(".py", ".exe")
-    subprocess.Popen([tmpdir + "/LU_updater.exe", running_file_path, _version], shell=False, stdin=None, stdout=None,
-                     stderr=None, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+    subprocess.Popen([f"{tmpdir}/LU_updater.exe", running_file_path, updateLog.get("version")], shell=False, stdin=None,
+                     stdout=None, stderr=None, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
     sleep(1)
     root.destroy()
     exit(0)
 
 
-def insert_dir():
+def insert_dir() -> None:
+    """
+    Diese Methode wird aufgerufen, wenn der Button neben dem Entry Label für den Synchronisationspfad gedrückt wird.
+    Der Filedialog wird geöffnet und sein return wird dem Entry Label übergeben.
+
+    :return: None
+    """
+
     dir_entry.delete(0, END)
     dir_entry.insert(0, filedialog.askdirectory())
 
 
-def show_settings():
+def show_settings() -> None:
+    """
+    Diese Methode wird aufgerufen, wenn der Button Einstellungen gedrückt wird, damit der Einstellungen Tab angezeigt
+    wird. Wenn die Einstellungen beim Starten der LU Sync gezeigt werden müssen, falls die userdata.json Datei nicht
+    existiert, beschädigt ist oder die Anmeldedaten falsch sind, wird der Tab direkt von dort gezeigt, nicht über diese
+    Methode.
+
+    :return: None
+    """
+
+    global previous_dir
+
+    # hide main frame
     main_frame.pack_forget()
+
+    # clear userdata entries
     username_entry.delete(0, END)
     password_entry.delete(0, END)
     dir_entry.delete(0, END)
+
     username_entry.insert(0, userdata.get("username"))
     password_entry.insert(0, userdata.get("password"))
     dir_entry.insert(0, userdata.get("dir"))
+
+    # save previous LU Sync dir
+    previous_dir = LU_dir
+
     userdata_frame.pack(expand=True, fill=BOTH)
 
 
-def toggle_show_password():
+def submit_settings() -> None:
+    """
+    Diese Methode wird aufgerufen, wenn der "Speichern" Button im Einstellungen Tab gedrückt wird, um die eingegebenen
+    Benutzerdaten zu speichern. Es wird auf die Korrektheit der Anmeldedaten überprüft, die Benutzerdaten werden in der
+    userdata.json Datei gespeichert und, falls der Synchronisationspfad geändert wurde, werden die Dateien verschoben
+    und je nach Auswahl der alte Ordner gelöscht.
+
+    :return: None
+    """
+
+    global userdata, LU_dir
+
+    # create userdata dict
+    userdata = {"username": username_entry.get(), "password": password_entry.get(), "dir": dir_entry.get()}
+
+    LU_dir = f"{userdata.get('dir')}/Lernumgebung OfflineSync"
+
+    # write userdata to the userdata file
+    with open(f"{tmpdir}/userdata_LU.json", "w+") as userdata_creator:
+        json.dump(userdata, userdata_creator)
+
+    # make sure the last user is logged out in order to check for the new userdata
+    if check_login():
+        s.get(url + "/index.php?abmelden=1")
+
+    # check new userdata
+    if not check_login():
+        # wrong login data, clear login entries and show error message
+        username_entry.delete(0, END)
+        password_entry.delete(0, END)
+        messagebox.showerror("Anmeldung fehlgeschlagen!", "Falscher Benutzername oder falsches Passwort")
+        return
+
+    # correct userdata, check for changed LU Sync directory
+    if previous_dir and LU_dir != previous_dir:
+        pass
+
+    userdata_frame.pack_forget()
+    main_frame.pack(expand=True, fill=BOTH)
+
+
+def toggle_show_password() -> None:
+    """
+    Schaltet zwischen dem versteckten Passwort (*) und dem sichtbaren Passwort um.
+    :return: None
+    """
+
     global show_password
     if show_password:
         password_entry.config(show="*")
@@ -149,7 +223,14 @@ def toggle_show_password():
     show_password = not show_password
 
 
-def mk_dir(path):
+def mk_dir(path: str) -> None:
+    """
+    Erstellt ein Verzeichnispfad und fängt etwaige Exceptions auf
+
+    :param path: Das zu ertsellende Verzeichnis
+    :return:
+    """
+
     global error_log
     try:
         try:
@@ -160,7 +241,17 @@ def mk_dir(path):
         error_log.append(("Folgender Pfad konnte nicht erstellt werden: ", ex, path))
 
 
-def download_file(file, dir_string):
+def download_file(file: dict, dir_string: str) -> None:
+    """
+    Lädt eine gegebene Datei, die über ihre ID identifiziert wird, herunter. Die Funktion parsed den Dateityp aus der
+    Lernumgebung in einen gängigen Dateityp um. Außerdem wird für einige Dateien ein Wrapper benötigt, in dem der Inhalt
+    der Datei eingebettet wird, z.B. Internetlinks oder Text Dateien, die als html Datei gespeichert sind.
+
+    :param file: Dictionary mit den Informationen "id", "name" und "typ"
+    :param dir_string: Pfad unter dem die Datei gespeichert werden soll
+    :return: None
+    """
+
     ext = file.get("typ")
     wrapper = b"file_content"
     if ext == "handschriftl Notiz":
@@ -199,29 +290,43 @@ def download_file(file, dir_string):
         return
 
     global error_log
-    s_file = None
-    print("Downloading File", file.get("name"), "to", dir_string + "/" + file.get("name") + ext)
-    # noinspection PyBroadException
-    try:
-        resp = s.get(url + "/edu/edufile.php?id=" + file.get("id") + "&download=1")
-        s_file = open(dir_string + "/" + file.get("name") + ext, "wb+")
-        s_file.write(wrapper.replace(b"file_content", resp.content))
-    except Exception as ex:
-        error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
-    try:
-        s_file.close()
-    except AttributeError:
-        pass
+    print(f"Downloading File {file.get('name')} to {dir_string}/{file.get('name')}{ext}")
+
+    with open(f"{dir_string}/{file.get('name')}{ext}", "wb+") as s_file:
+        # noinspection PyBroadException
+        try:
+            resp = s.get(f"{url}/edu/edufile.php?id={file.get('id')}&download=1")
+            s_file.write(wrapper.replace(b"file_content", resp.content))
+        except Exception as ex:
+            error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
 
 
-def get_material_list(href):
+def get_material_list(href: str) -> dict:
+    """
+    Lädt die material_list eines bestimmten LU Ordners in ein Dictionary. Die material_list wird als json Objekt
+    verarbeitet.
+
+    :param href: Link des LU Ordners, dessen material_list geladen werden soll.
+    :return:
+    """
     resp = s.get(href).text
     resp = resp[resp.find("window.materialListe = ") + 23:]
     resp = resp[:resp.find("</script>") - 1]
     return json.loads(resp)
 
 
-def syncLU(destroy=False):
+def syncLU(destroy: bool = False) -> None:
+    """
+    Methode zum Herunterladen der LU. Dabei werden die Hauptordner (Fächer) nacheinander abgearbeitet. Innerhalb der
+    Hauptordner wird jeder Unterordner geöffnet; der Zustand des vorherigen Ordners wird auf einen Stack abgelegt. Ist
+    das Ende eines Ordners erreicht worden, geht die MEthode zum vorherigen Ordner zurück, ist es eine Datei, wird diese
+    heruntergeladen.
+
+    :param destroy: Falls True, wird das Programm nach der Synchronisation beendet. Wird gesetzt, wenn das Programm mit
+    dem Autostart Parameter gestartet wird.
+    :return: None
+    """
+
     global error_log
     error_log = []
 
@@ -401,45 +506,48 @@ ToolTip(browse_btn, "Ordner auswählen")
 browse_btn.pack(side=RIGHT)
 dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
-Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_userdata).pack(fill=X, anchor=N, padx=30, pady=10)
-Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=bg_color, activebackground=bg_color, text=version, font="Helvetia 10 bold", relief=FLAT, command=lambda: launch_updater(version)).pack(side=LEFT, pady=2, padx=2)
-username_entry.bind("<Return>", submit_userdata)
-password_entry.bind("<Return>", submit_userdata)
-dir_entry.bind("Return", submit_userdata)
-browse_btn.bind("<Return>", submit_userdata)
+Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_settings).pack(fill=X, anchor=N, padx=30, pady=10)
+Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=bg_color, activebackground=bg_color, text=version, font="Helvetia 10 bold", relief=FLAT, command=launch_updater).pack(side=LEFT, pady=2, padx=2)
+username_entry.bind("<Return>", submit_settings)
+password_entry.bind("<Return>", submit_settings)
+dir_entry.bind("Return", submit_settings)
+browse_btn.bind("<Return>", submit_settings)
 
 
 # try parsing userdata from existing userdata file
-# existing userdata file
 try:
-    userdata_reader = open(tmpdir + "/userdata_LU.json", "r")
-    userdata = json.load(userdata_reader)
-    userdata_reader.close()
-    del userdata_reader
-    LU_dir = userdata.get("dir") + "/Lernumgebung OfflineSync"
+    # read existing userdata
+    with open(f"{tmpdir}/userdata_LU.json", "r") as userdata_reader:
+        userdata = json.load(userdata_reader)
+    LU_dir = f"{userdata.get('dir')}/Lernumgebung OfflineSync"
 
     # check for wrong login data
     if not check_login():
+        # incorrect userdata, fill only directory entry and show settings tab
         dir_entry.insert(0, userdata.get("dir"))
         userdata_frame.pack(expand=True, fill=BOTH)
     else:
+        # correct userdata, show main tab
         main_frame.pack(expand=True, fill=BOTH)
 
-# non existing dir or file, incorrect userdata file
 except (FileNotFoundError, json.decoder.JSONDecodeError):
+    # non existing dir or file, incorrect userdata file
+
+    # make sure the local directory for the userdata file exists
     try:
-        # create dir
         os.mkdir(tmpdir)
     except FileExistsError:
         pass
+
     # show enter userdata screen
     userdata_frame.pack(expand=True, fill=BOTH)
 
+# check for startup arguments
 if len(sys.argv) > 1 and sys.argv[1] == "-startup":
     Thread(target=lambda: syncLU(True)).start()
 else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
-        launch_updater(updateLog.get("version"))
+        launch_updater()
 
 root.mainloop()
