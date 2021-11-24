@@ -51,6 +51,67 @@ class ToolTip(object):
             tw.destroy()
 
 
+# custom DropdownDialog class with Dropdown menu
+class DropdownDialog(object):
+    """
+    Custom DropdownDialog. Es wird ein Dialog angezeigt mit einen Dropdown Menu, aus dem eine Option ausgewählt
+    werden kann.
+    """
+
+    def __init__(self, _root: Tk, msg: str, selection: StringVar, selection_list: list = None):
+        """
+        Custom DropdownDialog: Es wird ein Dialog mit Dropdown Menu angezeigt, aus dem eine Option ausgewählt werden
+        kann. Die Auswahl wird in der dem Konstruktor übergebenen Tkinter Variable gespeichert und kann nach der
+        Bestätigung des Dialogs von root window ausgelesen werden. Erscheint der Dialog, wird der Fokus vom root window
+        genommen, es können keine Buttons mehr gedrückt werden und es wird gewartet, bis der Dialog geschlossen wird.
+
+        :param _root: root window, also die Tk Instanz, für die der Dialog angezeigt werden soll
+        :param msg: Die anzuzeigende Message auf dem Dialog
+        :param selection: Tkinter StringVar, in der die Selection nach dem Submit gespeichert wird
+        :param selection_list: Liste an Auswahlmöglichkeiten
+        """
+
+        self.root = _root
+
+        self.top = Toplevel(_root)
+        self.top.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        self.selection = selection
+
+        self.close_var = BooleanVar()
+        self.close_var.set(FALSE)
+
+        dialog_frame = Frame(self.top, borderwidth=4, relief='ridge')
+        dialog_frame.pack(fill='both', expand=True)
+
+        message_box = Message(dialog_frame, text=msg, width=250)
+        message_box.pack(padx=4, pady=4)
+
+        if selection_list is not None:
+            self.selection.set(selection_list[0])
+
+            option_menu = OptionMenu(dialog_frame, self.selection, *selection_list)
+            option_menu.config(width=20, font="Helvetia 12")
+            option_menu.pack(side=TOP)
+
+            submit_btn = Button(dialog_frame, text="OK", command=self.submit, width=9)
+            submit_btn.pack(padx=30, pady=4, side=LEFT)
+
+        cancel_btn = Button(dialog_frame, text='Abbrechen', command=self.cancel)
+        cancel_btn.pack(padx=30, pady=4, side=RIGHT)
+
+        self.top.grab_set()
+        self.root.wait_variable(self.close_var)
+
+    def submit(self):
+        self.close_var.set(TRUE)
+        self.top.destroy()
+
+    def cancel(self):
+        self.selection.set("None")
+        self.submit()
+
+
 # frozen executable check
 frozen = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
@@ -203,7 +264,17 @@ def submit_settings() -> None:
 
     # correct userdata, check for changed LU Sync directory
     if previous_dir and LU_dir != previous_dir:
-        pass
+        options = ["Dateien verschieben", "Dateien Kopieren", "Keine Dateien in den neuen Ordner kopieren/verschieben"]
+        selected_action = StringVar()
+        DropdownDialog(root, "Der Synchronisationspfad wurde geändert. Wähle eine der folgenden Optionen aus, was mit "
+                             "den Dateien im alten Ordner gemacht werden soll. Es werden nur die Hauptordner verschoben"
+                             "oder kopiert, die in der Lernumgebung sind.", selected_action, options)
+        if selected_action.get() == options[0]:
+            pass
+        elif selected_action.get() == options[1]:
+            pass
+        elif selected_action.get() == options[2]:
+            pass
 
     userdata_frame.pack_forget()
     main_frame.pack(expand=True, fill=BOTH)
@@ -212,6 +283,7 @@ def submit_settings() -> None:
 def toggle_show_password() -> None:
     """
     Schaltet zwischen dem versteckten Passwort (*) und dem sichtbaren Passwort um.
+
     :return: None
     """
 
@@ -227,7 +299,7 @@ def mk_dir(path: str) -> None:
     """
     Erstellt ein Verzeichnispfad und fängt etwaige Exceptions auf
 
-    :param path: Das zu ertsellende Verzeichnis
+    :param path: Das zu erstellende Verzeichnis
     :return:
     """
 
@@ -319,7 +391,7 @@ def syncLU(destroy: bool = False) -> None:
     """
     Methode zum Herunterladen der LU. Dabei werden die Hauptordner (Fächer) nacheinander abgearbeitet. Innerhalb der
     Hauptordner wird jeder Unterordner geöffnet; der Zustand des vorherigen Ordners wird auf einen Stack abgelegt. Ist
-    das Ende eines Ordners erreicht worden, geht die MEthode zum vorherigen Ordner zurück, ist es eine Datei, wird diese
+    das Ende eines Ordners erreicht worden, geht die Methode zum vorherigen Ordner zurück, ist es eine Datei, wird diese
     heruntergeladen.
 
     :param destroy: Falls True, wird das Programm nach der Synchronisation beendet. Wird gesetzt, wenn das Programm mit
@@ -426,6 +498,7 @@ def syncLU(destroy: bool = False) -> None:
     except Exception as ex:
         error_log.append(("Anderweitige Fehlermeldung: ", ex, str(ex.__traceback__)))
 
+    # TODO delete errorlog.txt and only create if any errors occured during synchronisation
     print("Finished with", len(error_log), "errors")
     error_log_file = open(LU_dir + "/ErrorLog.txt", "w+")
     for error in error_log:
