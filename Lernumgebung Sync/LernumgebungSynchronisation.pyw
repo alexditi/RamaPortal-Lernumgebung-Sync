@@ -270,11 +270,14 @@ def submit_settings() -> None:
                              "den Dateien im alten Ordner gemacht werden soll. Es werden nur die Hauptordner verschoben"
                              "oder kopiert, die in der Lernumgebung sind.", selected_action, options)
         if selected_action.get() == options[0]:
+            # move files
             pass
         elif selected_action.get() == options[1]:
             pass
         elif selected_action.get() == options[2]:
             pass
+        elif selected_action.get() == "None":
+            return
 
     userdata_frame.pack_forget()
     main_frame.pack(expand=True, fill=BOTH)
@@ -373,6 +376,17 @@ def download_file(file: dict, dir_string: str) -> None:
             error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
 
 
+def get_groups():
+    """
+    List alle Fächer / Überordner as der Lernumgebung aus, damit so die Grundstruktur für das Verzeichnis steht.
+
+    :return: groupList. Eine List mit Tupeln nach dem Muster (group_id, group_name)
+    """
+    a_list = BeautifulSoup(s.get(url + "/edu/edumain.php").text, features="html.parser").find(class_="flist").find_all(name="a")
+
+    return [(a.get("href")[a.get("href").find("gruppe=") + 7: a.get("href").find("§ion=")], a.get("title")) for a in a_list]
+
+
 def get_material_list(href: str) -> dict:
     """
     Lädt die material_list eines bestimmten LU Ordners in ein Dictionary. Die material_list wird als json Objekt
@@ -381,10 +395,9 @@ def get_material_list(href: str) -> dict:
     :param href: Link des LU Ordners, dessen material_list geladen werden soll.
     :return:
     """
-    resp = s.get(href).text
-    resp = resp[resp.find("window.materialListe = ") + 23:]
-    resp = resp[:resp.find("</script>") - 1]
-    return json.loads(resp)
+    material_script = BeautifulSoup(s.get(href).text, features="html.parser").find(class_="hstack").find_all(name="script")[::-1][0]
+
+    return json.loads(str(material_script).replace("<script>window.materialListe = ", "").replace(";</script>", ""))
 
 
 def syncLU(destroy: bool = False) -> None:
@@ -407,42 +420,32 @@ def syncLU(destroy: bool = False) -> None:
     delete_cb.config(state=DISABLED)
     sync_new_cb.config(state=DISABLED)
 
-    if delete_before_sync.get() and messagebox.askyesno("Ordner löschen?", 'Soll wirklich der gesamte Ordner "Lernumgebung OfflineSync" gelöscht werden? Auch eigens hinzugefügte Dateien werden gelöscht.'):
+    if delete_before_sync.get() and messagebox.askyesno("Ordner löschen?", 'Es werden alle Ordner für Fächer der LU komplett gelöscht, auch eigene Dateien in diesen Ordnern!'):
         try:
-            info_label.config(text="Lösche alten Ordner")
+            info_label.config(text="Lösche alte Ordner")
             root.update()
-            shutil.rmtree(LU_dir)
+            for group in get_groups():
+                shutil.rmtree(f"{LU_dir}/{group[1]}")
         except FileNotFoundError:
             pass
 
-    # noinspection PyBroadException
     try:
         # get groups
-        resp = s.get(url + "/edu/edumain.php").text
-        groupList = list()
-        groupmanager = resp[resp.find("class='flist'"):resp.find("class='mlist'")]
-        groupmanager = groupmanager.replace("class='flist' ", "")
-        while groupmanager.find("gruppe") != -1:
-            groupList.append(groupmanager[groupmanager.find("title='") + 7:groupmanager.find("class='felem'") - 7])
-            groupmanager = groupmanager.replace("title=", "", 1).replace("class='felem'", "", 1)
-            groupList.append(groupmanager[groupmanager.find("gruppe=") + 7:groupmanager.find("&section")])
-
-            groupmanager = groupmanager.replace("gruppe=", "", 1).replace("&section", "", 1)
+        groupList = get_groups()
 
         # get each group's file directory
-        i = 0
         dir_stack = LifoQueue()
         mk_dir(LU_dir)
 
-        while i < len(groupList):
+        for group in groupList:
             for sect, dir_sa in [("publ", "Öffentlich"), ("priv", "Privat")]:
-                print(groupList[i], groupList[i + 1], dir_sa)
-                progress_label.config(text=groupList[i] + " (" + str(int(i / 2)) + "/" + str(int(len(groupList) / 2)) + ")")
+                print(group[1], group[0], dir_sa)
+                progress_label.config(text=f"{group[1]} ({groupList.index(group)}/{len(groupList)})")
                 root.update_idletasks()
 
                 # access main directory, create folder
-                current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=" + sect)
-                dir_string = LU_dir + "/" + groupList[i]
+                current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + group[0] + "&section=" + sect)
+                dir_string = LU_dir + "/" + group[1]
                 mk_dir(dir_string)
                 dir_string += "/" + dir_sa
                 mk_dir(dir_string)
@@ -468,7 +471,7 @@ def syncLU(destroy: bool = False) -> None:
                             # directory
                             dir_string += "/" + current_file.get("name")
                             mk_dir(dir_string)
-                            current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + groupList[i + 1] + "&section=" + sect + "&dir=" + current_file.get("id"))
+                            current_material_list = get_material_list(f"{url}/edu/edumain.php?gruppe={group[0]}&section={sect}&dir={current_file.get('id')}")
                             n = 0
                             print("changed dir to", current_file.get("name"))
                             info_label.config(text=current_file.get("name"))
@@ -494,18 +497,18 @@ def syncLU(destroy: bool = False) -> None:
                             break
                     n += 1
 
-            i += 2
     except Exception as ex:
         error_log.append(("Anderweitige Fehlermeldung: ", ex, str(ex.__traceback__)))
 
-    # TODO delete errorlog.txt and only create if any errors occured during synchronisation
+    # delete error_log.txt if present (from previous versions) and only create if any errors occurred
     print("Finished with", len(error_log), "errors")
-    error_log_file = open(LU_dir + "/ErrorLog.txt", "w+")
-    for error in error_log:
-        print(error)
-        error_log_file.write(str(error) + "\n")
-    error_log_file.close()
+    if os.path.exists(f"{LU_dir}/ErrorLog.txt"):
+        os.remove(f"{LU_dir}/ErrorLog.txt")
+    if len(error_log) > 0:
+        with open(f"{LU_dir}/ErrorLog.txt", "w+") as error_log_file:
+            error_log_file.write("\n".join([str(error) for error in error_log]))
 
+    # show final message an release buttons
     progress_label.config(text="Fertig!")
     e_msg = "Synchronisation mit " + str(len(error_log)) + " Fehlermeldung(en) abgeschlossen."
     if len(error_log) > 0:
