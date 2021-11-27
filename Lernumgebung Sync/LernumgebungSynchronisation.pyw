@@ -376,7 +376,7 @@ def download_file(file: dict, dir_string: str) -> None:
             error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
 
 
-def get_groups():
+def get_groups() -> list:
     """
     List alle Fächer / Überordner as der Lernumgebung aus, damit so die Grundstruktur für das Verzeichnis steht.
 
