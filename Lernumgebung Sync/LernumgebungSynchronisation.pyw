@@ -140,7 +140,7 @@ show_password = False
 delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
-previous_dir = None
+previous_dir = ""
 
 version = "v5.8"
 
@@ -252,7 +252,7 @@ def submit_settings() -> None:
 
     # make sure the last user is logged out in order to check for the new userdata
     if check_login():
-        s.get(url + "/index.php?abmelden=1")
+        s.get(f"{url}/index.php?abmelden=1")
 
     # check new userdata
     if not check_login():
@@ -263,18 +263,35 @@ def submit_settings() -> None:
         return
 
     # correct userdata, check for changed LU Sync directory
-    if previous_dir and LU_dir != previous_dir:
+    if previous_dir and LU_dir != previous_dir and os.path.exists(previous_dir):
         options = ["Dateien verschieben", "Dateien Kopieren", "Keine Dateien in den neuen Ordner kopieren/verschieben"]
         selected_action = StringVar()
         DropdownDialog(root, "Der Synchronisationspfad wurde geändert. Wähle eine der folgenden Optionen aus, was mit "
                              "den Dateien im alten Ordner gemacht werden soll. Es werden nur die Hauptordner verschoben"
                              "oder kopiert, die in der Lernumgebung sind.", selected_action, options)
+
         if selected_action.get() == options[0]:
             # move files
-            pass
+            try:
+                for group in get_groups():
+                    shutil.move(f"{previous_dir}/{group[1]}", f"{LU_dir}/{group[1]}")
+                if len(os.listdir(previous_dir)) == 0:
+                    shutil.rmtree(previous_dir)
+            except FileNotFoundError:
+                messagebox.showerror("Fehler beim Verschieben",
+                                     "Die Dateien konnten nicht verschoben werden, weil der alte Ordner nicht mehr existiert.")
+            except PermissionError:
+                print("Couldn't delete the previous directory due to Permission restrictions")
         elif selected_action.get() == options[1]:
-            pass
+            # copy files
+            try:
+                for group in get_groups():
+                    shutil.copytree(f"{previous_dir}/{group[1]}", f"{LU_dir}/{group[1]}")
+            except FileNotFoundError:
+                messagebox.showerror("Fehler beim Verschieben",
+                                     "Die Dateien konnten nicht verschoben werden, weil der alte Ordner nicht mehr existiert.")
         elif selected_action.get() == options[2]:
+            # don't move any files
             pass
         elif selected_action.get() == "None":
             return
