@@ -142,7 +142,7 @@ sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 previous_dir = ""
 
-version = "v5.8"
+version = "v6.0"
 
 # color constants
 bg_color = "#282828"
