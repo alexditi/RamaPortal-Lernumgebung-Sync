@@ -19,7 +19,7 @@ Ordner "Lernumgebung Sync"
 Für die Lernumgebung Offline Synchronisation ist für Windows 10 (64bit) eine .exe Datei vorhanden. Diese kann einfach 
 benutzt und per Doppelklick ausgeführt werden.  
 Die Datei LU_updater.exe ist die Update-Datei der Lernumgebung Synchronisation und wird nicht benötigt. Sie ist nur in 
-diesem Verzeichnis auf GitHub, damit sie, falls eine neue Version verfügbar ist, von dre Lernumgebung Synchronisation 
+diesem Verzeichnis auf GitHub, damit sie, falls eine neue Version verfügbar ist, von der Lernumgebung Synchronisation 
 heruntergeladen werden kann und das Update selbstständig ausführt. Die LU_updater.exe Datei kann außerdem nicht ohne 
 weiteres selbstständig ausgeführt werden.
 
