@@ -517,7 +517,7 @@ def syncLU(destroy: bool = False) -> None:
     except Exception as ex:
         error_log.append(("Anderweitige Fehlermeldung: ", ex, str(ex.__traceback__)))
 
-    # delete error_log.txt if present (from previous versions) and only create if any errors occurred
+    # delete error_log.txt if present (from previous versions) and only create the file if any errors occurred
     print("Finished with", len(error_log), "errors")
     if os.path.exists(f"{LU_dir}/ErrorLog.txt"):
         os.remove(f"{LU_dir}/ErrorLog.txt")
@@ -527,9 +527,9 @@ def syncLU(destroy: bool = False) -> None:
 
     # show final message an release buttons
     progress_label.config(text="Fertig!")
-    e_msg = "Synchronisation mit " + str(len(error_log)) + " Fehlermeldung(en) abgeschlossen."
+    e_msg = "Synchronisation erfolgreich abgeschlossen."
     if len(error_log) > 0:
-        e_msg += " Siehe ErrorLog.txt für weitere Informationen."
+        e_msg = f"Synchronisation mit {len(error_log)} Fehlern abgeschlossen. Siehe ErrorLog.txt für weitere Informationen."
     info_label.config(text=e_msg)
     settings_btn.config(state=NORMAL)
     sync_btn.config(state=NORMAL)
