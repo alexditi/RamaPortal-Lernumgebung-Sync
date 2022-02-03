@@ -31,7 +31,7 @@ def close():
     subprocess.Popen([path.get()], shell=False, stdin=None, stdout=None, stderr=None, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
     sleep(1)
     root.destroy()
-    exit(0)
+    sys.exit(0)
 
 
 root = Tk()

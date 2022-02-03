@@ -142,7 +142,7 @@ sync_only_new = BooleanVar()
 sync_only_new.set(TRUE)
 previous_dir = ""
 
-version = "v6.0"
+version = "v6.1"
 
 # color constants
 bg_color = "#282828"
@@ -184,7 +184,7 @@ def launch_updater() -> None:
                      stdout=None, stderr=None, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
     sleep(1)
     root.destroy()
-    exit(0)
+    sys.exit(0)
 
 
 def insert_dir() -> None:
