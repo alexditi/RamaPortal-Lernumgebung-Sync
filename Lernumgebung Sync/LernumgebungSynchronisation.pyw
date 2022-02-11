@@ -3,6 +3,7 @@ import os
 import json
 import shutil
 import subprocess
+import sys
 from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
@@ -39,7 +40,7 @@ class ToolTip(object):
         x = self.widget.winfo_rootx() + 37
         y = self.widget.winfo_rooty() + 27
         self.tipwindow = tw = Toplevel(self.widget)
-        tw.wm_overrideredirect(1)
+        tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
         label = Label(tw, text=self.text, justify=LEFT, background=bg_color, foreground=font_color, relief=SOLID, borderwidth=1, font="Helvetia 8")
         label.pack(ipadx=1)
@@ -561,17 +562,17 @@ settings_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 sync_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=lambda: Thread(target=syncLU).start(), relief=FLAT)
 sync_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 cb_frame = Frame(main_frame)
-delete_cb = Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color, v=delete_before_sync)
+delete_cb = Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color, variable=delete_before_sync)
 delete_cb.pack(side=LEFT)
 Label(cb_frame, text="Ordner vor Update löschen", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=Y)
 cb_frame.pack(pady=5, padx=8, anchor=W, side=TOP)
 cb_frame1 = Frame(main_frame)
-sync_new_cb = Checkbutton(cb_frame1, bg=bg_color, activebackground=bg_color, v=sync_only_new)
+sync_new_cb = Checkbutton(cb_frame1, bg=bg_color, activebackground=bg_color, variable=sync_only_new)
 sync_new_cb.pack(side=LEFT, anchor=S)
 Label(cb_frame1, text="Nur neue Dateien synchronisieren", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=Y)
 cb_frame1.pack(pady=5, padx=8, anchor=W, side=TOP)
 sync_frame = Frame(main_frame, bg=rama_color, width=250, height=150)
-sync_frame.pack_propagate(0)
+sync_frame.pack_propagate(False)
 progress_label = Label(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 14 bold", text="")
 progress_label.pack(fill=X)
 info_label = Message(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 10", text="", aspect=400)
