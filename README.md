@@ -45,7 +45,6 @@ kopiert werden sollen, oder nichts von beiden gemacht werden soll.
 
 Im Repository finden sich neben der LernumgebungSynchronisation.exe Datei noch andere Dateien:
 * README.md: Diese Datei mit den Informationen
-* logo_rama.ico: Das App Logo
 
 Im Ordner Lernumgebung Sync:
 * LernumgebungSynchronisation.exe: Synchronisationstool
@@ -56,6 +55,7 @@ installiert
 Im Ordner Sourcecode:
 * LernumgebungSynchronisation.pyw: Der Python Sourcecode für das Tool
 * LU_updater.py: Der Python Sourcecode für den Updater
+* logo_rama.ico: Das App Logo
 
 ## Sourcecode
 
