@@ -2,6 +2,7 @@ from tkinter import *
 import requests
 import subprocess
 import os
+import sys
 from time import sleep
 
 # color constants
