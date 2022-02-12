@@ -1,50 +1,79 @@
-# RamaPortal Client-Sided Projects
+# RamaPortal Lernumgebung Synchronisation
 
-Hier werden Projekte veröffentlicht, die die [RamaPortal Website](https://portal.rama-mainz.de "Zum RamaPortal") 
-zugänglicher für den Desktop machen.
+## Überblick
 
-* Lernumgebung Offline Synchronisation
-* Desktop Chat Funktion
-* RamaPortal als Desktop Version
+Die Lernumgebung Synchronisation ist ein Tool, mit dem man seine persönliche Lernumgebung aus dem
+[RamaPortal](https://portal.rama-mainz.de "Zum RamaPortal") herunterladen kann, um die Dateien offline auf dem PC zur
+Verfügung zu haben.  
+Zum Benutzen des Tools wird nur die Datei [LernumgebungSynchronisation.exe](https://github.com/alexditi/RamaPortal-Lernumgebung-Sync/raw/master/LernumgebungSynchronisation.exe "Zum Download")
+benötigt. Der Downloadlink ist auch unter dem neuesten Release zu finden.
 
-Unter Releases den neuesten Release downloaden und die .zip entpacken. In den jeweiligen Ordnern findet man die 
-benötigten Dateien für das Projekt.
+## Benutzung
 
-__ __
+Die .exe Datei wurde unter Windows 10 kompiliert, d.h. sie ist ausgelegt für Windows 10, sollte aber auch auf Windows 11
+laufen, was jedoch noch nicht getestet wurde.  
 
-### Lernumgebung Offline Synchronisation
+### Erster Start
 
-Ordner "Lernumgebung Sync"
+Beim ersten Starten der LernumgebungSynchronisation.exe Datei kann es sein, dass der Windows Defender wahrscheinlich das
+Ausführen blockiert. Um es zuzulassen, „weitere Informationen“ anklicken und dann „Trotzdem ausführen“ auswählen.  
+Jetzt wird ein Anmeldefeld angezeigt, in das die eigenen Anmeldedaten zum RamaPortal eingegeben werden müssen. Diese
+werden gespeichert, sodass man sie nicht mehr eingeben muss. Über den Button neben dem Passwort Eingabefeld kann dessen
+Sichtbarkeit umgeschaltet werden. Außerdem muss ein Synchronisationspfad angegeben werden, in dem der Ordner erstellt
+wird, in den die Lernumgebung heruntergeladen wird. Über den Button daneben kann ein Dialog geöffnet werden, in dem der
+Dateipfad im Explorer ausgewählt werden kann.
 
-Für die Lernumgebung Offline Synchronisation ist für Windows 10 (64bit) eine .exe Datei vorhanden. Diese kann einfach 
-benutzt und per Doppelklick ausgeführt werden.  
-Die Datei LU_updater.exe ist die Update-Datei der Lernumgebung Synchronisation und wird nicht benötigt. Sie ist nur in 
-diesem Verzeichnis auf GitHub, damit sie, falls eine neue Version verfügbar ist, von der Lernumgebung Synchronisation 
-heruntergeladen werden kann und das Update selbstständig ausführt. Die LU_updater.exe Datei kann außerdem nicht ohne 
-weiteres selbstständig ausgeführt werden.
+### Hauptmenü
 
-Der Sourcecode ist auch erhältlich. Die Datei LernumgebungSynchronisation.pyw ist die Python Datei, die über eine 
-gängige [Python Installation](https://www.python.org/downloads/ "Zum Python Download") ausgeführt werden kann. 
-Zusätzlich müssen die beiden Module `requests` und `beautifulsoup4` installiert werden. Der Python Sourcecode läuft 
-aktuell auch nur über Windows, da auf die Windows PATH-Variablen zugegriffen wird. (Auf anderweitigen Betriebssystemen 
-wurde es zwar noch nicht getestet, es sollte aber eine Fehlermeldung auftreten). Auch für den Updater ist der Soucecode 
-unter LU_updater.py vorhanden.
-Die beiden Module werden mithilfe von pip, einem in Python beinhalteten Installer für Python Module installiert werden. 
-Dazu eine Konsole öffnen und die Befehle `pip install beatifulsoup4` und `pip install requests` ausführen.
+Im Hauptmenü wird über den Button "Starte Synchronisation" das Herunterladen gestartet. Die Checkbox nur neue
+Synchronisieren sorgt dafür, dass nicht jede Datei heruntergeladen wird, sondern nur die, die noch nicht offline
+verfügbar sind. Dabei werden jedoch Änderungen an einer Datei in der Lernumgebung nicht synchronisiert, da nur auf das
+Vorhandensein einer Datei überprüft wird. Will man also alle Dateien auch aktualisieren, kann diese Checkbox abgewählt
+werden. Die zweite Checkbox "Ordner vor Update löschen" löscht den gesamten LU Sync Ordner vor dem Herunterladen, sodass
+überschüssige Dateien, die in der Lernumgebung schon gelöscht wurden, auch offline gelöscht werden. Dabei werden aber
+**alle** Dateien in dem Ordner gelöscht. Diese beiden etwas umständlichen Optionen zum Aufräumen der Dateien sind aber
+notwendig, da die Lernumgebung nicht als Cloud System ausgelegt ist zu Offline Synchronisation und daher kein Version
+Log besitzt, in dem Änderungen von Dateien gespeichert werden.
 
-Bei der ersten Ausführung der .exe Datei wird der Windows Defender wahrscheinlich das Ausführen blockieren. Um es 
-zuzulassen, „weitere Informationen“ anklicken und dann „Trotzdem ausführen“ auswählen.
+### Einstellungsmenü
 
-Wird die Lernumgebung Synchronisation zum ersten Mal gestartet, so müssen die benötigten Nutzerdaten angegeben werden. 
-Das Passwortfeld ist sichtgeschützt, was aber mit dem Button neben der Eingabe geändert werden kann.  
-Als Synchronisationspfad wird ein Überordner angegeben (mit dem Button neben der Eingabe den Windows Pfad Dialog 
-öffnen). In dem ausgewählten Ordner wird ein weiterer Ordner, LU Synchronisation, erstellt, in den die Lernumgebung 
-synchronisiert wird.
+Im Einstellungsmenü können Anmeldedaten sowie Synchronisationspfad geändert werden. Wenn der Synchronisationspfad
+geändert wird, hat man die Möglichkeit auszuwählen, ob die Dateien aus dem alten Ordner in den neuen verschoben oder
+kopiert werden sollen, oder nichts von beiden gemacht werden soll.
 
-__ __
+## Andere Dateien im Repo
 
-### RamaPortal Client
+Im Repository finden sich neben der LernumgebungSynchronisation.exe Datei noch andere Dateien:
+* LU_updater.exe: Ein Updater, der automatisch heruntergeladen wird, wenn eine neue Version verfügbar ist und diese dann 
+installiert
+* LernumgebungSynchronisation.pyw: Der Python Sourcecode für das Tool
+* LU_updater.py: Der Python Sourcecode für den Updater
+* README.md: Diese Datei mit den Informationen
+* logo_rama.ico: Das App Logo
+* updateLog.json: Versionsnummer der neuesten Version für den Updater.
 
-Ordner "RamaPortal Client"
+## Support alte Versionen unter v7.0
+Aufgrund einer Umstrukturierung des Repos befindet sich die neue Datei updateLog.json nicht mehr in dem Unterordner
+Lernumgebung Sync. Die Versionen unter v7.0 suchen jedoch in diesem nach der neuesten Version. Wenn diese nicht gefunden
+wird, kommt es zu einer Fehlermeldung. Deshalb existiert noch der Unterordner mit der alten updateLog.json Datei.
+Vermutlich wird der Unterordner Mitte 2022 aber entfernt und nur noch Versionen ab v7.0 damit unterstützt.
 
-Nicht ausgereifte Desktop Version des RamaPortals (**nicht funktionsfähig**)
+## Sourcecode
+
+Der Sourcecode ist in der .pyw bzw. in der .py Datei zu finden. Der Code wird in Python 3.8 entwickelt, sollte aber auch
+in neueren Pythonversionen funktionieren. Es werden die beiden zusätzlichen Libraries `requests` und `beautifulsoup4`
+benötigt (Installation über pip mit `pip install beatifulsoup4` und `pip install requests`). Auch der Sourcecode ist nur
+auf Windows funktionell, denn es wird auf die Windows Umgebungsvariablen zugegriffen.
+
+## Option -startup
+
+Wird die Lernumgebung Synchronisation mit dem Argument `-startup` gestartet (zum Beispiel über CMD), so startet direkt
+ein Synchronisationsvorgang. Sobald dieser beendet ist, schließt das Programm wieder. Das kann verwendet werden, um
+beispielsweise einen automatischen Synchronisationsvorgang beim PC-Start einzurichten. Das geht beispielsweise über die
+Windows Aufgabenplanung.
+
+## TODO v7.0 mit Repo Restructure, sodass updateLog aus der neuen Datei ausgelesen wird
+Die Update-Datei im ordner aber erst in einem haben jahr löschen
+support für ältere Versionen hört auf sozusagen
+!!! auf alle Links in beiden Dateien überprüfen, ob sie aktualisiert werden müssen wegen der Umstrukturierung
+`cmd /k hostname` für PC Namen
