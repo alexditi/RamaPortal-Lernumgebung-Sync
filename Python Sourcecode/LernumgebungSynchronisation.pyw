@@ -174,7 +174,7 @@ def launch_updater() -> None:
 
     # download updater
     with open(f"{tmpdir}/LU_updater.exe", "wb+") as updater:
-        updater.write(requests.get(f"https://github.com/alexditi/RamaPortalClientsided-Projects/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
+        updater.write(requests.get(f"https://github.com/alexditi/RamaPortal-Lernumgebung%20Sync/raw/{updateLog.get('version')}/Lernumgebung Sync/LU_updater.exe").content)
 
     # start updater
     if frozen:
@@ -545,11 +545,11 @@ def syncLU(destroy: bool = False) -> None:
 # check for available internet connection
 v = None
 try:
-    v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
+    v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortal-Lernumgebung%20Sync/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
 except (requests.ConnectionError, requests.Timeout):
     messagebox.showwarning("Keine Internetverbindung!", "Stelle sicher, dass du eine Internetverbindung hast und starte die App erneut.")
     try:
-        v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortalClientsided-Projects/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
+        v = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortal-Lernumgebung%20Sync/master/Lernumgebung%20Sync/updateLog.json", timeout=5)
     except (requests.ConnectionError, requests.Timeout):
         sys.exit(0)
 
