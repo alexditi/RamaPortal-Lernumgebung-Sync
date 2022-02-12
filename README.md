@@ -52,12 +52,6 @@ installiert
 * logo_rama.ico: Das App Logo
 * updateLog.json: Versionsnummer der neuesten Version für den Updater.
 
-## Support alte Versionen unter v7.0
-Aufgrund einer Umstrukturierung des Repos befindet sich die neue Datei updateLog.json nicht mehr in dem Unterordner
-Lernumgebung Sync. Die Versionen unter v7.0 suchen jedoch in diesem nach der neuesten Version. Wenn diese nicht gefunden
-wird, kommt es zu einer Fehlermeldung. Deshalb existiert noch der Unterordner mit der alten updateLog.json Datei.
-Vermutlich wird der Unterordner Mitte 2022 aber entfernt und nur noch Versionen ab v7.0 damit unterstützt.
-
 ## Sourcecode
 
 Der Sourcecode ist in der .pyw bzw. in der .py Datei zu finden. Der Code wird in Python 3.8 entwickelt, sollte aber auch
@@ -73,7 +67,5 @@ beispielsweise einen automatischen Synchronisationsvorgang beim PC-Start einzuri
 Windows Aufgabenplanung.
 
 ## TODO v7.0 mit Repo Restructure, sodass updateLog aus der neuen Datei ausgelesen wird
-Die Update-Datei im ordner aber erst in einem haben jahr löschen
-support für ältere Versionen hört auf sozusagen
 !!! auf alle Links in beiden Dateien überprüfen, ob sie aktualisiert werden müssen wegen der Umstrukturierung
 `cmd /k hostname` für PC Namen
