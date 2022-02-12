@@ -15,12 +15,12 @@ from time import sleep
 # tooltip class
 class ToolTip(object):
     """
-    Tool Tip Klasse: Zeigt neben einem Tkinter Widget einen Text an, wenn man über dieses mit dem Zeiger fährt.
+    ToolTip Klasse: Zeigt neben einem Tkinter Widget einen Text an, wenn man über dieses mit dem Zeiger fährt.
     """
 
     def __init__(self, widget: BaseWidget, text: str) -> None:
         """
-        Tooltip Klasse: Zeigt neben dem Tkinter Widget einen Text an, wenn man über das Widget mit dem Mauszeiger
+        ToolTip Klasse: Zeigt neben dem Tkinter Widget einen Text an, wenn man über das Widget mit dem Mauszeiger
         fährt.
 
         :param widget: Parent Widget des Tooltips, für das der Tooltip angezeigt wird.
