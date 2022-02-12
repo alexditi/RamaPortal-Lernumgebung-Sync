@@ -128,7 +128,7 @@ if frozen:
     base_path = f"{sys._MEIPASS}\\"
 else:
     base_path = ""
-root.iconbitmap(os.path.join(base_path, "/logo_rama.ico"))
+root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
 # some global variables
 tmpdir = f"{os.environ.get('localappdata')}\\RamaPortal Client"
