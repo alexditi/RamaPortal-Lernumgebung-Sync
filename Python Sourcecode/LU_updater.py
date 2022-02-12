@@ -40,10 +40,9 @@ root.wm_title("LU Sync Updater")
 root.wm_minsize(100, 100)
 
 # search for icon
-# noinspection PyBroadException
-try:
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     base_path = sys._MEIPASS + "\\"
-except Exception:
+else:
     base_path = ""
 root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
