@@ -20,7 +20,7 @@ def update():
     info_label.config(text="Downloading new file LernumgebungSynchronisation.exe")
     root.update_idletasks()
     with open(path.get(), "wb+") as new_file:
-        new_file.write(requests.get(f"https://github.com/alexditi/RamaPortal-Lernumgebung%20Sync/raw/{version.get()}/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
+        new_file.write(requests.get(f"https://github.com/alexditi/RamaPortal-Lernumgebung-Sync/raw/{version.get()}/Lernumgebung Sync/LernumgebungSynchronisation.exe").content)
     info_label.config(text="Installation abgeschlossen")
     root.update_idletasks()
     sleep(0.5)
