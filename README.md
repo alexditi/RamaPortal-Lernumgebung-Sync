@@ -2,7 +2,7 @@
 
 ## Überblick
 
-Die Lernumgebung Synchronisation ist ein Tool, mit dem man seine persönliche Lernumgebung aus dem
+Die Lernumgebung Synchronisation ist ein Tool, mit dem man seine Lernumgebung aus dem
 [RamaPortal](https://portal.rama-mainz.de "Zum RamaPortal") herunterladen kann, um die Dateien offline auf dem PC zur
 Verfügung zu haben.  
 Zum Benutzen des Tools wird nur die Datei [LernumgebungSynchronisation.exe](https://github.com/alexditi/RamaPortal-Lernumgebung-Sync/raw/master/Lernumgebung%20Sync/LernumgebungSynchronisation.exe "Zum Download")
