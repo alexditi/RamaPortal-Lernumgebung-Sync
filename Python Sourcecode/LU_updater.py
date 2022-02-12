@@ -44,7 +44,7 @@ try:
     base_path = sys._MEIPASS + "\\"
 except Exception:
     base_path = ""
-root.iconbitmap(os.path.join(base_path, "../logo_rama.ico"))
+root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
 main_frame = Frame(root, bg=bg_color)
 
