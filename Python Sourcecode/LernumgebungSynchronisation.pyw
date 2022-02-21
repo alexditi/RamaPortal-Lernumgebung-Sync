@@ -1,9 +1,11 @@
+import datetime
 import requests
 import os
 import json
 import shutil
 import subprocess
 import sys
+import unicodedata
 from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
@@ -542,6 +544,60 @@ def syncLU(destroy: bool = False) -> None:
         sys.exit(0)
 
 
+def create_task_template(network_name: str = "") -> None:
+    # get username
+    username = os.environ.get("username") or os.environ.get("user")
+
+    # get date and time
+    d = datetime.datetime.today()
+    date_time = f"{d.year}-{str(d.month).zfill(2)}-{str(d.day).zfill(2)}T{str(d.hour).zfill(2)}:{str(d.minute).zfill(2)}:{str(d.second).zfill(2)}.{str(d.microsecond).zfill(6)}0"
+
+    # get user sid
+    user_sid = "".join(
+        c for c in
+        subprocess.run(["wmic", "useraccount", "where", f"name='{username}'", "get", "sid"], capture_output=True, text=True).stdout
+        if unicodedata.category(c)[0] != "C" and c != " "
+    ).replace("SID", "")
+
+    # get name of current network
+    # based on a powershell script, for reference see get_network_name.ps1
+    default_ipv4_index = "".join(
+        c for c in
+        subprocess.run('powershell -command "Get-NetRoute -DestinationPrefix 0.0.0.0/0|Sort-Object {$_.RouteMetric+(Get-NetIPInterface -AssociatedRoute $_).InterfaceMetric}|Select-Object -First 1 -ExpandProperty InterfaceIndex"',
+                       capture_output=True, text=True).stdout
+        if unicodedata.category(c)[0] != "C" and c != " "
+    )
+    network_name = "".join(
+        c for c in
+        subprocess.run(f'powershell -command "(Get-NetConnectionProfile -InterfaceIndex {default_ipv4_index}).Name"',
+                       capture_output=True, text=True).stdout
+        if unicodedata.category(c)[0] != "C"
+    )
+
+    # get network guid
+    # create get_guid script, for reference see file get_guid.cmd
+    with open(f"{tmpdir}/get_guid.bat", "w+") as cmdlet:
+        cmdlet.write(
+            "@ECHO OFF\n"
+            f"SET SearchString=\"\'Name\'^^^>{network_name}\"\n"
+            "FOR /f \"delims=\" %%i IN (\'wevtutil qe Microsoft-Windows-NetworkProfile/Operational /q:\"Event[System[EventID=10000]]\" /c:100 /rd:true /f:xml ^| FINDSTR /R \"%SearchString%\"\') DO (\n"
+            "ECHO %%i\n"
+            ")"
+        )
+    # execute script and parse xml output
+    network_guid = BeautifulSoup(
+        subprocess.run([f"{tmpdir}/get_guid.bat"], capture_output=True, text=True).stdout, features="xml"
+    ).find_all(Name="Guid")[0].text
+
+    # get executable path
+    if frozen:
+        executable_path = sys.executable
+    else:
+        executable_path = os.path.abspath(__file__).replace("\\", "/").replace(".pyw", ".exe")
+
+    print(username, date_time, user_sid, network_name, network_guid, executable_path)
+
+
 # check for available internet connection
 v = None
 try:
@@ -644,4 +700,5 @@ else:
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         launch_updater()
 
+create_task_template("DitingerWLAN")
 root.mainloop()
