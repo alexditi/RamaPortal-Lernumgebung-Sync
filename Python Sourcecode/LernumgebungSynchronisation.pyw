@@ -561,18 +561,21 @@ def create_task_template(network_name: str = "") -> None:
 
     # get name of current network
     # based on a powershell script, for reference see get_network_name.ps1
-    default_ipv4_index = "".join(
-        c for c in
-        subprocess.run('powershell -command "Get-NetRoute -DestinationPrefix 0.0.0.0/0|Sort-Object {$_.RouteMetric+(Get-NetIPInterface -AssociatedRoute $_).InterfaceMetric}|Select-Object -First 1 -ExpandProperty InterfaceIndex"',
-                       capture_output=True, text=True).stdout
-        if unicodedata.category(c)[0] != "C" and c != " "
-    )
-    network_name = "".join(
-        c for c in
-        subprocess.run(f'powershell -command "(Get-NetConnectionProfile -InterfaceIndex {default_ipv4_index}).Name"',
-                       capture_output=True, text=True).stdout
-        if unicodedata.category(c)[0] != "C"
-    )
+    # the reference script is not downloaded and executed, since powershell script execution is restricted
+    # instead, only single commands are executed as they are not restricted
+    if not network_name:
+        default_ipv4_index = "".join(
+            c for c in
+            subprocess.run('powershell -command "Get-NetRoute -DestinationPrefix 0.0.0.0/0|Sort-Object {$_.RouteMetric+(Get-NetIPInterface -AssociatedRoute $_).InterfaceMetric}|Select-Object -First 1 -ExpandProperty InterfaceIndex"',
+                           capture_output=True, text=True).stdout
+            if unicodedata.category(c)[0] != "C" and c != " "
+        )
+        network_name = "".join(
+            c for c in
+            subprocess.run(f'powershell -command "(Get-NetConnectionProfile -InterfaceIndex {default_ipv4_index}).Name"',
+                           capture_output=True, text=True).stdout
+            if unicodedata.category(c)[0] != "C"
+        )
 
     # get network guid
     # create get_guid script, for reference see file get_guid.cmd
@@ -596,6 +599,19 @@ def create_task_template(network_name: str = "") -> None:
         executable_path = os.path.abspath(__file__).replace("\\", "/").replace(".pyw", ".exe")
 
     print(username, date_time, user_sid, network_name, network_guid, executable_path)
+
+    # create xml task scheduler file
+    task_template = requests.get("https://raw.githubusercontent.com/alexditi/RamaPortal-Lernumgebung-Sync/master/Aufgabenplanung%20Vorlage/LU%20Sync.xml").content.decode("utf-16")
+    task_template = task_template.replace("date_time", date_time)
+    task_template = task_template.replace("username", username)
+    task_template = task_template.replace("user_sid", user_sid)
+    task_template = task_template.replace("network_name", network_name)
+    task_template = task_template.replace("network_guid", network_guid)
+    task_template = task_template.replace("executable_path", executable_path)
+    print(task_template)
+
+    with open("LU Sync.xml", "wb+") as file:
+        file.write(task_template.encode("utf-16"))
 
 
 # check for available internet connection
@@ -700,5 +716,5 @@ else:
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         launch_updater()
 
-create_task_template("DitingerWLAN")
+create_task_template()
 root.mainloop()
