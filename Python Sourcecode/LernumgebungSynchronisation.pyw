@@ -10,7 +10,6 @@ from bs4 import BeautifulSoup
 from queue import LifoQueue
 from tkinter import *
 from tkinter import messagebox, filedialog
-from threading import Thread
 from time import sleep
 
 
@@ -420,15 +419,13 @@ def get_material_list(href: str) -> dict:
     return json.loads(str(material_script).replace("<script>window.materialListe = ", "").replace(";</script>", ""))
 
 
-def syncLU(destroy: bool = False) -> None:
+def syncLU() -> None:
     """
     Methode zum Herunterladen der LU. Dabei werden die Hauptordner (Fächer) nacheinander abgearbeitet. Innerhalb der
     Hauptordner wird jeder Unterordner geöffnet; der Zustand des vorherigen Ordners wird auf einen Stack abgelegt. Ist
     das Ende eines Ordners erreicht worden, geht die Methode zum vorherigen Ordner zurück, ist es eine Datei, wird diese
     heruntergeladen.
 
-    :param destroy: Falls True, wird das Programm nach der Synchronisation beendet. Wird gesetzt, wenn das Programm mit
-    dem Autostart Parameter gestartet wird.
     :return: None
     """
 
@@ -461,7 +458,7 @@ def syncLU(destroy: bool = False) -> None:
             for sect, dir_sa in [("publ", "Öffentlich"), ("priv", "Privat")]:
                 print(group[1], group[0], dir_sa)
                 progress_label.config(text=f"{group[1]} ({groupList.index(group)}/{len(groupList)})")
-                root.update_idletasks()
+                root.update()
 
                 # access main directory, create folder
                 current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + group[0] + "&section=" + sect)
@@ -495,14 +492,14 @@ def syncLU(destroy: bool = False) -> None:
                             n = 0
                             print("changed dir to", current_file.get("name"))
                             info_label.config(text=current_file.get("name"))
-                            root.update_idletasks()
+                            root.update()
                         elif current_file.get("typ") == "diropen":
                             pass
                         else:
                             # file
                             dir_stack.get()
                             info_label.config(text=current_file.get("name"))
-                            root.update_idletasks()
+                            root.update()
                             download_file(current_file, dir_string)
                     except IndexError:
                         # end of current materialList
@@ -538,10 +535,6 @@ def syncLU(destroy: bool = False) -> None:
     sync_btn.config(state=NORMAL)
     delete_cb.config(state=NORMAL)
     sync_new_cb.config(state=NORMAL)
-
-    if destroy:
-        root.quit()
-        sys.exit(0)
 
 
 def create_task_template(network_name: str = "") -> None:
@@ -631,7 +624,7 @@ root.deiconify()
 main_frame = Frame(root, bg=bg_color)
 settings_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Einstellungen", font="Helvetia 16 bold", command=show_settings, relief=FLAT)
 settings_btn.pack(anchor=S, fill=X, pady=10, padx=8)
-sync_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=lambda: Thread(target=syncLU).start(), relief=FLAT)
+sync_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=syncLU, relief=FLAT)
 sync_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 cb_frame = Frame(main_frame)
 delete_cb = Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color, variable=delete_before_sync)
@@ -710,7 +703,9 @@ except (FileNotFoundError, json.decoder.JSONDecodeError):
 
 # check for startup arguments
 if len(sys.argv) > 1 and sys.argv[1] == "-startup":
-    Thread(target=lambda: syncLU(True)).start()
+    syncLU()
+    root.destroy()
+    sys.exit(0)
 else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
