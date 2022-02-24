@@ -715,8 +715,7 @@ def show_task_settings() -> None:
         # use connected network
         register_task_template()
     elif selected_action.get() == options[1]:
-        # use given network name
-        pass
+        register_task_template(network_name.get())
     elif selected_action.get() == options[2]:
         # delete task
         pass
