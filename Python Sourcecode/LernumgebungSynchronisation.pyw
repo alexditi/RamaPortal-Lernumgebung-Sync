@@ -56,7 +56,7 @@ class ToolTip(object):
 # custom DropdownDialog class with Dropdown menu
 class DropdownDialog(object):
     """
-    Custom DropdownDialog. Es wird ein Dialog angezeigt mit einen Dropdown Menu, aus dem eine Option ausgewählt
+    Custom DropdownDialog. Es wird ein Dialog angezeigt mit einem Dropdown Menu, aus dem eine Option ausgewählt
     werden kann.
     """
 
@@ -104,6 +104,87 @@ class DropdownDialog(object):
 
         self.top.grab_set()
         self.root.wait_variable(self.close_var)
+
+    def submit(self):
+        self.close_var.set(TRUE)
+        self.top.destroy()
+
+    def cancel(self):
+        self.selection.set("None")
+        self.submit()
+
+
+class TaskSchedulerDropdownDialog(object):
+    """
+    Dialog zur Auswahl, wie die Aufgabe für den Task Scheduler erstellt werden soll.
+    """
+
+    def __init__(self, _root: Tk, selection: StringVar, network_name: StringVar, options: list):
+        """
+        Über diesen Dropdown Dialog kann ausgewählt werden, wie die Aufgabe für den TaskScheduler erstellt wird.
+
+        :param _root: root window, also die Tk Instanz, für die der Dialog angezeigt werden soll
+        :param selection: Tkinter StringVar, in der die Selection nach dem Submit gespeichert wird
+        :param network_name: Tkinter StringVar, in der der Name des Netzwerks gespeichert wird
+        """
+
+        self.root = _root
+
+        self.top = Toplevel(_root)
+        self.top.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        self.selection = selection
+        self.selection.trace_add("write", self.show_network_name_entry)
+
+        self.network_name = network_name
+
+        self.close_var = BooleanVar()
+        self.close_var.set(FALSE)
+
+        dialog_frame = Frame(self.top, borderwidth=4, relief='ridge')
+        dialog_frame.pack(fill='both', expand=True)
+
+        msg = "Die Lernumgebung Synchronisation kann automatisch nach der Benutzeranmeldung gestartet werden, wenn eine " \
+              "bestimme Netzwerkverbindung vorhanden ist. Dazu wird am besten das Heimnetzwerk ausgewählt, sodass die " \
+              "Synchronisation gestartet wird, wenn man den PC zu Hause startet.\nDie erste Option richtet den Autostart " \
+              "ein mit dem aktuell verbundenen Netzwerk als Bedingung.\nDie zweite Option richtet den Autostart ein mit " \
+              "einem bestimmten Netzwerk, dessen Name angegeben werden muss.\nAußerdem kann der Autostart deaktiviert " \
+              "werden mit der dritten Option."
+        message_box = Message(dialog_frame, text=msg, width=420)
+        message_box.pack(padx=4, pady=4)
+
+        network_name_frame = Frame(dialog_frame, width=420, height=20)
+        network_name_frame.pack()
+
+        self.network_name_label = Label(network_name_frame, text="Netzwerk Name: ")
+        self.network_name_label.pack(side=LEFT)
+
+        self.network_name_entry = Entry(network_name_frame, textvariable=self.network_name, width=20)
+        self.network_name_entry.pack(side=RIGHT)
+
+        self.selection_list = options
+
+        self.selection.set(self.selection_list[0])
+        option_menu = OptionMenu(dialog_frame, self.selection, *self.selection_list)
+        option_menu.config(width=40, font="Helvetia 12")
+        option_menu.pack(side=TOP)
+
+        submit_btn = Button(dialog_frame, text="OK", command=self.submit, width=9)
+        submit_btn.pack(padx=30, pady=4, side=LEFT)
+
+        cancel_btn = Button(dialog_frame, text='Abbrechen', command=self.cancel)
+        cancel_btn.pack(padx=30, pady=4, side=RIGHT)
+
+        self.top.grab_set()
+        self.root.wait_variable(self.close_var)
+
+    def show_network_name_entry(self, _array, _index, _mode):
+        if self.selection.get() == self.selection_list[1]:
+            self.network_name_entry.pack(side=RIGHT)
+            self.network_name_label.pack(side=LEFT)
+        else:
+            self.network_name_entry.pack_forget()
+            self.network_name_label.pack_forget()
 
     def submit(self):
         self.close_var.set(TRUE)
@@ -196,9 +277,10 @@ def insert_dir() -> None:
 
     :return: None
     """
-
-    dir_entry.delete(0, END)
-    dir_entry.insert(0, filedialog.askdirectory())
+    path = filedialog.askdirectory()
+    if path:
+        dir_entry.delete(0, END)
+        dir_entry.insert(0, path)
 
 
 def show_settings() -> None:
@@ -537,7 +619,17 @@ def syncLU() -> None:
     sync_new_cb.config(state=NORMAL)
 
 
-def create_task_template(network_name: str = "") -> None:
+def register_task_template(network_name: str = "") -> None:
+    """
+    Diese Methode registriert eine Aufgabe in der Aufgabenplanung, die die LU Sync bei Anmeldung eines Benutzers und
+    vorhandener Internetverbindung (bestimmtes Netzwerk, z.B. Heimnetzwerk) startet. Es werden die notwendigen
+    Informationen über cmd bzw powershell Befehle eingeholt und dann eine xml Datei erstellt, die über einen powershell
+    command als Aufgabe registriert wird.
+
+    :param network_name: Name des Netzwerks, mit dem man verbunden sein muss, damit die LU Sync gestartet wird. Falls
+    nicht spezifiziert, wird das aktuell verbundene Netzwerk verwendet.
+    :return: None
+    """
     # get username
     username = os.environ.get("username") or os.environ.get("user")
 
@@ -606,9 +698,28 @@ def create_task_template(network_name: str = "") -> None:
         file.write(task_template.encode("utf-16"))
 
     # register task
-    subprocess.run(
-        f"Powershell -Command \"Start-Process -FilePath \'powershell\' -ArgumentList \'-Command \"\"Register-ScheduledTask -TaskName \'\'LU Sync\'\' -Xml (Get-Content \'\'{tmpdir}\\LU Sync.xml\'\' | Out-String)\"\"\' -Verb RunAs\""
-    )
+    res = subprocess.run(
+        f"Powershell -Command \"Start-Process -FilePath \'powershell\' -ArgumentList \'-Command \"\"Register-ScheduledTask -TaskName \'\'LU Sync\'\' -Xml (Get-Content \'\'{tmpdir}\\LU Sync.xml\'\' | Out-String)\"\"\' -Verb RunAs\"",
+        capture_output=True, text=True
+    ).stdout
+    print(res)
+
+
+def show_task_settings() -> None:
+    options = ["Aufgabe mit verbundenem Netzwerk erstellen", "Aufgabe mit Netzwerkname erstellen", "Aufgabe löschen"]
+    selected_action = StringVar()
+    network_name = StringVar()
+    TaskSchedulerDropdownDialog(root, selected_action, network_name, options)
+
+    if selected_action.get() == options[0]:
+        # use connected network
+        register_task_template()
+    elif selected_action.get() == options[1]:
+        # use given network name
+        pass
+    elif selected_action.get() == options[2]:
+        # delete task
+        pass
 
 
 # check for available internet connection
@@ -671,6 +782,7 @@ dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
 Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_settings).pack(fill=X, anchor=N, padx=30, pady=10)
 Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=bg_color, activebackground=bg_color, text=version, font="Helvetia 10 bold", relief=FLAT, command=launch_updater).pack(side=LEFT, pady=2, padx=2)
+Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=bg_color, activebackground=bg_color, text="Auto Sync einrichten", font="Helvetia 10 bold", relief=FLAT, command=show_task_settings).pack(side=RIGHT, pady=2, padx=2)
 username_entry.bind("<Return>", submit_settings)
 password_entry.bind("<Return>", submit_settings)
 dir_entry.bind("Return", submit_settings)
@@ -715,5 +827,4 @@ else:
     if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         launch_updater()
 
-create_task_template()
 root.mainloop()
