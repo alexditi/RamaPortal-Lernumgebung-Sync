@@ -1,0 +1,1 @@
+Powershell -Command "Start-Process -FilePath 'powershell' -ArgumentList '-Command ""Register-ScheduledTask -TaskName ''LU Sync'' -Xml (Get-Content ''%tmpdir%\LU Sync.xml'' | Out-String)""' -Verb RunAs"

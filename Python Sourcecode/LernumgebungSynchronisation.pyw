@@ -605,6 +605,11 @@ def create_task_template(network_name: str = "") -> None:
     with open(f"{tmpdir}/LU Sync.xml", "wb+") as file:
         file.write(task_template.encode("utf-16"))
 
+    # register task
+    subprocess.run(
+        f"Powershell -Command \"Start-Process -FilePath \'powershell\' -ArgumentList \'-Command \"\"Register-ScheduledTask -TaskName \'\'LU Sync\'\' -Xml (Get-Content \'\'{tmpdir}\\LU Sync.xml\'\' | Out-String)\"\"\' -Verb RunAs\""
+    )
+
 
 # check for available internet connection
 v = None
