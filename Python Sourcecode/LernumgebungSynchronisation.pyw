@@ -601,9 +601,8 @@ def create_task_template(network_name: str = "") -> None:
     task_template = task_template.replace("network_name", network_name)
     task_template = task_template.replace("network_guid", network_guid)
     task_template = task_template.replace("executable_path", executable_path)
-    print(task_template)
 
-    with open("LU Sync.xml", "wb+") as file:
+    with open(f"{tmpdir}/LU Sync.xml", "wb+") as file:
         file.write(task_template.encode("utf-16"))
 
 
