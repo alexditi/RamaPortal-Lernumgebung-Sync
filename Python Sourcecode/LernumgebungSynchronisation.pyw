@@ -43,7 +43,7 @@ class ToolTip(object):
         self.tipwindow = tw = Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
-        label = Label(tw, text=self.text, justify=LEFT, background=bg_color, foreground=font_color, relief=SOLID, borderwidth=1, font="Helvetia 8")
+        label = Label(tw, text=self.text, justify=LEFT, background=BG_COLOR, foreground=FONT_COLOR, relief=SOLID, borderwidth=1, font="Helvetia 8")
         label.pack(ipadx=1)
 
     def _hidetip(self, _event: Event) -> None:
@@ -214,24 +214,23 @@ root.iconbitmap(os.path.join(base_path, "logo_rama.ico"))
 
 # some global variables
 tmpdir = f"{os.environ.get('localappdata')}\\RamaPortal Client"
-url = "https://portal.rama-mainz.de"
 s = requests.Session()
 error_log = []
 userdata = {}
 LU_dir = ""
 show_password = False
 delete_before_sync = BooleanVar()
-sync_only_new = BooleanVar()
-sync_only_new.set(TRUE)
+sync_only_new = BooleanVar(value=TRUE)
 previous_dir = ""
 
-version = "v7.0"
+URL = "https://portal.rama-mainz.de"
+VERSION = "v7.0"
 
 # color constants
-bg_color = "#282828"
-font_color = "light grey"
-rama_color = "#A51320"
-rama_color_active = "#9E1220"
+BG_COLOR = "#282828"
+FONT_COLOR = "light grey"
+RAMA_COLOR = "#A51320"
+RAMA_COLOR_ACTIVE = "#9E1220"
 
 
 def check_login() -> bool:
@@ -241,7 +240,7 @@ def check_login() -> bool:
     :return: True, wenn die Anmeldung mit den aktuellen Benutzerdaten erfolgreich war, andernfalls False
     """
 
-    return not (BeautifulSoup(s.post(f"{url}/index.php", {"username": userdata.get("username"), "password": userdata.get(
+    return not (BeautifulSoup(s.post(f"{URL}/index.php", {"username": userdata.get("username"), "password": userdata.get(
             "password")}).text, features="html.parser").text.find("angemeldet als") == -1)
 
 
@@ -303,6 +302,7 @@ def show_settings() -> None:
     password_entry.delete(0, END)
     dir_entry.delete(0, END)
 
+    # refill userdata entries with latest userdata
     username_entry.insert(0, userdata.get("username"))
     password_entry.insert(0, userdata.get("password"))
     dir_entry.insert(0, userdata.get("dir"))
@@ -336,7 +336,7 @@ def submit_settings() -> None:
 
     # make sure the last user is logged out in order to check for the new userdata
     if check_login():
-        s.get(f"{url}/index.php?abmelden=1")
+        s.get(f"{URL}/index.php?abmelden=1")
 
     # check new userdata
     if not check_login():
@@ -471,7 +471,7 @@ def download_file(file: dict, dir_string: str) -> None:
     with open(f"{dir_string}/{file.get('name')}{ext}", "wb+") as s_file:
         # noinspection PyBroadException
         try:
-            resp = s.get(f"{url}/edu/edufile.php?id={file.get('id')}&download=1")
+            resp = s.get(f"{URL}/edu/edufile.php?id={file.get('id')}&download=1")
             s_file.write(wrapper.replace(b"file_content", resp.content))
         except Exception as ex:
             error_log.append(("Beim speichern der folgenden Datei ist ein Fehler aufgetreten: ", ex, file))
@@ -483,7 +483,7 @@ def get_groups() -> list:
 
     :return: groupList. Eine List mit Tupeln nach dem Muster (group_id, group_name)
     """
-    a_list = BeautifulSoup(s.get(url + "/edu/edumain.php").text, features="html.parser").find(class_="flist").find_all(name="a")
+    a_list = BeautifulSoup(s.get(URL + "/edu/edumain.php").text, features="html.parser").find(class_="flist").find_all(name="a")
 
     return [(a.get("href")[a.get("href").find("gruppe=") + 7: a.get("href").find("§ion=")], a.get("title")) for a in a_list]
 
@@ -543,7 +543,7 @@ def syncLU() -> None:
                 root.update()
 
                 # access main directory, create folder
-                current_material_list = get_material_list(url + "/edu/edumain.php?gruppe=" + group[0] + "&section=" + sect)
+                current_material_list = get_material_list(URL + "/edu/edumain.php?gruppe=" + group[0] + "&section=" + sect)
                 dir_string = LU_dir + "/" + group[1]
                 mk_dir(dir_string)
                 dir_string += "/" + dir_sa
@@ -570,7 +570,7 @@ def syncLU() -> None:
                             # directory
                             dir_string += "/" + current_file.get("name")
                             mk_dir(dir_string)
-                            current_material_list = get_material_list(f"{url}/edu/edumain.php?gruppe={group[0]}&section={sect}&dir={current_file.get('id')}")
+                            current_material_list = get_material_list(f"{URL}/edu/edumain.php?gruppe={group[0]}&section={sect}&dir={current_file.get('id')}")
                             n = 0
                             print("changed dir to", current_file.get("name"))
                             info_label.config(text=current_file.get("name"))
@@ -630,10 +630,11 @@ def register_task_template(network_name: str = "") -> None:
     nicht spezifiziert, wird das aktuell verbundene Netzwerk verwendet.
     :return: None
     """
+
     # get username
     username = os.environ.get("username") or os.environ.get("user")
 
-    # get date and time
+    # get date and time, fill single digits with leading zeros
     d = datetime.datetime.today()
     date_time = f"{d.year}-{str(d.month).zfill(2)}-{str(d.day).zfill(2)}T{str(d.hour).zfill(2)}:{str(d.minute).zfill(2)}:{str(d.second).zfill(2)}.{str(d.microsecond).zfill(6)}0"
 
@@ -649,23 +650,27 @@ def register_task_template(network_name: str = "") -> None:
     # the reference script is not downloaded and executed, since powershell script execution is restricted
     # instead, only single commands are executed as they are not restricted
     if not network_name:
+        # get the index of default network interface
         default_ipv4_index = "".join(
             c for c in
-            subprocess.run('powershell -command "Get-NetRoute -DestinationPrefix 0.0.0.0/0|Sort-Object {$_.RouteMetric+(Get-NetIPInterface -AssociatedRoute $_).InterfaceMetric}|Select-Object -First 1 -ExpandProperty InterfaceIndex"',
+            subprocess.run('powershell -Command "Get-NetRoute -DestinationPrefix 0.0.0.0/0|Sort-Object {$_.RouteMetric+(Get-NetIPInterface -AssociatedRoute $_).InterfaceMetric}|Select-Object -First 1 -ExpandProperty InterfaceIndex"',
                            capture_output=True, text=True).stdout
             if unicodedata.category(c)[0] != "C" and c != " "
         )
+        # get the name of the given network interface
         network_name = "".join(
             c for c in
-            subprocess.run(f'powershell -command "(Get-NetConnectionProfile -InterfaceIndex {default_ipv4_index}).Name"',
+            subprocess.run(f'powershell -Command "(Get-NetConnectionProfile -InterfaceIndex {default_ipv4_index}).Name"',
                            capture_output=True, text=True).stdout
             if unicodedata.category(c)[0] != "C"
         )
 
     # get network guid
     # create get_guid script, for reference see file get_guid.cmd
-    with open(f"{tmpdir}/get_guid.bat", "w+") as cmdlet:
-        cmdlet.write(
+    # in order to get the network guid, the script uses Windows Event Logging
+    # connecting to a network triggers the Event ID 10000 and logs the network's guid
+    with open(f"{tmpdir}/get_guid.bat", "w+") as script:
+        script.write(
             "@ECHO OFF\n"
             f"SET SearchString=\"\'Name\'^^^>{network_name}\"\n"
             "FOR /f \"delims=\" %%i IN (\'wevtutil qe Microsoft-Windows-NetworkProfile/Operational /q:\"Event[System[EventID=10000]]\" /c:100 /rd:true /f:xml ^| FINDSTR /R \"%SearchString%\"\') DO (\n"
@@ -735,53 +740,53 @@ except (requests.ConnectionError, requests.Timeout):
 root.deiconify()
 
 # main Frame
-main_frame = Frame(root, bg=bg_color)
-settings_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Einstellungen", font="Helvetia 16 bold", command=show_settings, relief=FLAT)
+main_frame = Frame(root, bg=BG_COLOR)
+settings_btn = Button(main_frame, bg=RAMA_COLOR, activebackground=RAMA_COLOR_ACTIVE, fg=FONT_COLOR, activeforeground=FONT_COLOR, text="Einstellungen", font="Helvetia 16 bold", command=show_settings, relief=FLAT)
 settings_btn.pack(anchor=S, fill=X, pady=10, padx=8)
-sync_btn = Button(main_frame, bg=rama_color, activebackground=rama_color_active, fg=font_color, activeforeground=font_color, text="Starte Synchronisation", font="Helvetia 16 bold", command=syncLU, relief=FLAT)
+sync_btn = Button(main_frame, bg=RAMA_COLOR, activebackground=RAMA_COLOR_ACTIVE, fg=FONT_COLOR, activeforeground=FONT_COLOR, text="Starte Synchronisation", font="Helvetia 16 bold", command=syncLU, relief=FLAT)
 sync_btn.pack(anchor=S, fill=X, pady=10, padx=8)
 cb_frame = Frame(main_frame)
-delete_cb = Checkbutton(cb_frame, bg=bg_color, activebackground=bg_color, variable=delete_before_sync)
+delete_cb = Checkbutton(cb_frame, bg=BG_COLOR, activebackground=BG_COLOR, variable=delete_before_sync)
 delete_cb.pack(side=LEFT)
-Label(cb_frame, text="Ordner vor Update löschen", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=Y)
+Label(cb_frame, text="Ordner vor Update löschen", font="Helvetia 12", fg=FONT_COLOR, bg=BG_COLOR).pack(side=RIGHT, fill=Y)
 cb_frame.pack(pady=5, padx=8, anchor=W, side=TOP)
 cb_frame1 = Frame(main_frame)
-sync_new_cb = Checkbutton(cb_frame1, bg=bg_color, activebackground=bg_color, variable=sync_only_new)
+sync_new_cb = Checkbutton(cb_frame1, bg=BG_COLOR, activebackground=BG_COLOR, variable=sync_only_new)
 sync_new_cb.pack(side=LEFT, anchor=S)
-Label(cb_frame1, text="Nur neue Dateien synchronisieren", font="Helvetia 12", fg=font_color, bg=bg_color).pack(side=RIGHT, fill=Y)
+Label(cb_frame1, text="Nur neue Dateien synchronisieren", font="Helvetia 12", fg=FONT_COLOR, bg=BG_COLOR).pack(side=RIGHT, fill=Y)
 cb_frame1.pack(pady=5, padx=8, anchor=W, side=TOP)
-sync_frame = Frame(main_frame, bg=rama_color, width=250, height=150)
+sync_frame = Frame(main_frame, bg=RAMA_COLOR, width=250, height=150)
 sync_frame.pack_propagate(False)
-progress_label = Label(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 14 bold", text="")
+progress_label = Label(sync_frame, bg=BG_COLOR, fg=FONT_COLOR, font="Helvetia 14 bold", text="")
 progress_label.pack(fill=X)
-info_label = Message(sync_frame, bg=bg_color, fg=font_color, font="Helvetia 10", text="", aspect=400)
+info_label = Message(sync_frame, bg=BG_COLOR, fg=FONT_COLOR, font="Helvetia 10", text="", aspect=400)
 info_label.pack(fill=BOTH, expand=True)
 sync_frame.pack(side=TOP, pady=5)
 
 # userdata Frame
-userdata_frame = Frame(root, bg=bg_color)
-Label(userdata_frame, bg=bg_color, fg=font_color, text="Benutzername", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
-username_entry = Entry(userdata_frame, bg=bg_color, fg=font_color, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
+userdata_frame = Frame(root, bg=BG_COLOR)
+Label(userdata_frame, bg=BG_COLOR, fg=FONT_COLOR, text="Benutzername", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
+username_entry = Entry(userdata_frame, bg=BG_COLOR, fg=FONT_COLOR, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
 username_entry.pack(fill=X, anchor=N, padx=8)
-Label(userdata_frame, bg=bg_color, fg=font_color, text="Passwort", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
-password_frame = Frame(userdata_frame, bg=bg_color)
-password_entry = Entry(password_frame, bg=bg_color, fg=font_color, font="Helvetia 16", show="*", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
-show_password_btn = Button(password_frame, text="O", font="Helveita 16 bold", bg=bg_color, activebackground=bg_color, fg=rama_color, activeforeground=rama_color_active, relief=FLAT, width=2, command=toggle_show_password)
+Label(userdata_frame, bg=BG_COLOR, fg=FONT_COLOR, text="Passwort", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
+password_frame = Frame(userdata_frame, bg=BG_COLOR)
+password_entry = Entry(password_frame, bg=BG_COLOR, fg=FONT_COLOR, font="Helvetia 16", show="*", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
+show_password_btn = Button(password_frame, text="O", font="Helveita 16 bold", bg=BG_COLOR, activebackground=BG_COLOR, fg=RAMA_COLOR, activeforeground=RAMA_COLOR_ACTIVE, relief=FLAT, width=2, command=toggle_show_password)
 ToolTip(show_password_btn, "Passwort anzeigen")
 show_password_btn.pack(side=RIGHT)
 password_entry.pack(fill=X, side=LEFT)
 password_frame.pack(fill=X, anchor=N, padx=8)
-Label(userdata_frame, bg=bg_color, fg=font_color, text="Synchronisationspfad", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
-dir_frame = Frame(userdata_frame, bg=bg_color)
-dir_entry = Entry(dir_frame, bg=bg_color, fg=font_color, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
-browse_btn = Button(dir_frame, fg=rama_color, activeforeground=rama_color_active, bg=bg_color, activebackground=bg_color, text="||", font="Helvetia 16 bold", relief=FLAT, command=insert_dir)
+Label(userdata_frame, bg=BG_COLOR, fg=FONT_COLOR, text="Synchronisationspfad", font="Helvetia 16 bold").pack(fill=X, anchor=N, pady=5)
+dir_frame = Frame(userdata_frame, bg=BG_COLOR)
+dir_entry = Entry(dir_frame, bg=BG_COLOR, fg=FONT_COLOR, font="Helvetia 16", relief=FLAT, highlightthickness=2, highlightcolor="black", highlightbackground="black")
+browse_btn = Button(dir_frame, fg=RAMA_COLOR, activeforeground=RAMA_COLOR_ACTIVE, bg=BG_COLOR, activebackground=BG_COLOR, text="||", font="Helvetia 16 bold", relief=FLAT, command=insert_dir)
 ToolTip(browse_btn, "Ordner auswählen")
 browse_btn.pack(side=RIGHT)
 dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
-Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=rama_color, activebackground=rama_color_active, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_settings).pack(fill=X, anchor=N, padx=30, pady=10)
-Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=bg_color, activebackground=bg_color, text=version, font="Helvetia 10 bold", relief=FLAT, command=launch_updater).pack(side=LEFT, pady=2, padx=2)
-Button(userdata_frame, fg=font_color, activeforeground=font_color, bg=bg_color, activebackground=bg_color, text="Auto Sync einrichten", font="Helvetia 10 bold", relief=FLAT, command=show_task_settings).pack(side=RIGHT, pady=2, padx=2)
+Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=RAMA_COLOR, activebackground=RAMA_COLOR_ACTIVE, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_settings).pack(fill=X, anchor=N, padx=30, pady=10)
+Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=BG_COLOR, activebackground=BG_COLOR, text=VERSION, font="Helvetia 10 bold", relief=FLAT, command=launch_updater).pack(side=LEFT, pady=2, padx=2)
+Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=BG_COLOR, activebackground=BG_COLOR, text="Auto Sync einrichten", font="Helvetia 10 bold", relief=FLAT, command=show_task_settings).pack(side=RIGHT, pady=2, padx=2)
 username_entry.bind("<Return>", submit_settings)
 password_entry.bind("<Return>", submit_settings)
 dir_entry.bind("Return", submit_settings)
@@ -823,7 +828,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "-startup":
     sys.exit(0)
 else:
     updateLog = json.loads(v.text)
-    if updateLog.get("version") != version and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
+    if updateLog.get("version") != VERSION and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         launch_updater()
 
 root.mainloop()
