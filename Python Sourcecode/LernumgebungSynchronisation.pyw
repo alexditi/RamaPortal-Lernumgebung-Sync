@@ -744,6 +744,8 @@ def show_task_settings() -> None:
         if selected_action.get() == options2[0]:
             # delete task
             missing_admin = unregister_task()
+        else:
+            return
         if missing_admin:
             messagebox.showerror("Fehler beim Deaktivieren von Auto Sync",
                                  "Auto Sync konnte nicht deaktiviert werden, da keine Administratorberechtigung erteilt "
@@ -762,6 +764,8 @@ def show_task_settings() -> None:
         elif selected_action.get() == options1[1]:
             # create task with given network name
             missing_admin = register_task_template(network_name.get())
+        else:
+            return
         if missing_admin:
             messagebox.showerror("Fehler beim Einrichten von Auto Sync",
                                  "Auto Sync konnte nicht eingerichtet werden, da keine Administratorberechtigung "
