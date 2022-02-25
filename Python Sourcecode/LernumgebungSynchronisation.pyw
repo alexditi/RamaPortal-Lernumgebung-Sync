@@ -119,7 +119,7 @@ class TaskSchedulerDropdownDialog(object):
     Dialog zur Auswahl, wie die Aufgabe für den Task Scheduler erstellt werden soll.
     """
 
-    def __init__(self, _root: Tk, selection: StringVar, network_name: StringVar, options: list):
+    def __init__(self, _root: Tk, selection: StringVar, network_name: StringVar, options: list, msg):
         """
         Über diesen Dropdown Dialog kann ausgewählt werden, wie die Aufgabe für den TaskScheduler erstellt wird.
 
@@ -144,12 +144,6 @@ class TaskSchedulerDropdownDialog(object):
         dialog_frame = Frame(self.top, borderwidth=4, relief='ridge')
         dialog_frame.pack(fill='both', expand=True)
 
-        msg = "Die Lernumgebung Synchronisation kann automatisch nach der Benutzeranmeldung gestartet werden, wenn eine " \
-              "bestimme Netzwerkverbindung vorhanden ist. Dazu wird am besten das Heimnetzwerk ausgewählt, sodass die " \
-              "Synchronisation gestartet wird, wenn man den PC zu Hause startet.\nDie erste Option richtet den Autostart " \
-              "ein mit dem aktuell verbundenen Netzwerk als Bedingung.\nDie zweite Option richtet den Autostart ein mit " \
-              "einem bestimmten Netzwerk, dessen Name angegeben werden muss.\nAußerdem kann der Autostart deaktiviert " \
-              "werden mit der dritten Option."
         message_box = Message(dialog_frame, text=msg, width=420)
         message_box.pack(padx=4, pady=4)
 
@@ -157,10 +151,8 @@ class TaskSchedulerDropdownDialog(object):
         network_name_frame.pack()
 
         self.network_name_label = Label(network_name_frame, text="Netzwerk Name: ")
-        self.network_name_label.pack(side=LEFT)
 
         self.network_name_entry = Entry(network_name_frame, textvariable=self.network_name, width=20)
-        self.network_name_entry.pack(side=RIGHT)
 
         self.selection_list = options
 
@@ -179,6 +171,8 @@ class TaskSchedulerDropdownDialog(object):
         self.root.wait_variable(self.close_var)
 
     def show_network_name_entry(self, _array, _index, _mode):
+        if len(self.selection_list) <= 1:
+            return
         if self.selection.get() == self.selection_list[1]:
             self.network_name_entry.pack(side=RIGHT)
             self.network_name_label.pack(side=LEFT)
@@ -619,7 +613,12 @@ def syncLU() -> None:
     sync_new_cb.config(state=NORMAL)
 
 
-def register_task_template(network_name: str = "") -> None:
+def task_available() -> bool:
+    res = subprocess.run('powershell -Command "Get-ScheduledTask -TaskName \'LU Sync\'"', capture_output=True)
+    return res.stdout.decode("cp850").find("Ready") != -1 and not res.stderr.decode("cp850")
+
+
+def register_task_template(network_name: str = "") -> bool:
     """
     Diese Methode registriert eine Aufgabe in der Aufgabenplanung, die die LU Sync bei Anmeldung eines Benutzers und
     vorhandener Internetverbindung (bestimmtes Netzwerk, z.B. Heimnetzwerk) startet. Es werden die notwendigen
@@ -628,7 +627,7 @@ def register_task_template(network_name: str = "") -> None:
 
     :param network_name: Name des Netzwerks, mit dem man verbunden sein muss, damit die LU Sync gestartet wird. Falls
     nicht spezifiziert, wird das aktuell verbundene Netzwerk verwendet.
-    :return: None
+    :return: True, wenn keine Administratorberechtigung erteilt wurde
     """
 
     # get username
@@ -705,25 +704,54 @@ def register_task_template(network_name: str = "") -> None:
     # register task
     res = subprocess.run(
         f"Powershell -Command \"Start-Process -FilePath \'powershell\' -ArgumentList \'-Command \"\"Register-ScheduledTask -TaskName \'\'LU Sync\'\' -Xml (Get-Content \'\'{tmpdir}\\LU Sync.xml\'\' | Out-String)\"\"\' -Verb RunAs\"",
-        capture_output=True, text=True
-    ).stdout
-    print(res)
+        capture_output=True
+    )
+    sleep(2)
+
+    return not (not res.stdout.decode("cp850") or not res.stderr.decode("cp850"))
 
 
 def show_task_settings() -> None:
-    options = ["Aufgabe mit verbundenem Netzwerk erstellen", "Aufgabe mit Netzwerkname erstellen", "Aufgabe löschen"]
+    options1 = ["Aufgabe mit verbundenem Netzwerk erstellen", "Aufgabe mit Netzwerkname erstellen"]
+    options2 = ["Aufgabe löschen"]
+    msg1 = "Auto Sync deaktiviert\n" \
+        "Die Lernumgebung Synchronisation kann automatisch nach der Benutzeranmeldung gestartet werden, wenn eine " \
+        "bestimme Netzwerkverbindung vorhanden ist. Dazu wird am besten das Heimnetzwerk ausgewählt, sodass die " \
+        "Synchronisation gestartet wird, wenn man den PC zu Hause startet.\nDie erste Option richtet den Autostart " \
+        "ein mit dem aktuell verbundenen Netzwerk als Bedingung.\nDie zweite Option richtet den Autostart ein mit " \
+        "einem bestimmten Netzwerk, dessen Name angegeben werden muss."
+    msg2 = "Auto Sync aktiviert\n" \
+        "Die automatische Lernumgebung Synchronisation ist aktiviert. Mit der Option \"Löschen\" kann diese " \
+        "deaktiviert werden."
     selected_action = StringVar()
     network_name = StringVar()
-    TaskSchedulerDropdownDialog(root, selected_action, network_name, options)
 
-    if selected_action.get() == options[0]:
-        # use connected network
-        register_task_template()
-    elif selected_action.get() == options[1]:
-        register_task_template(network_name.get())
-    elif selected_action.get() == options[2]:
-        # delete task
-        pass
+    if task_available():
+        # task already available, show options2
+        TaskSchedulerDropdownDialog(root, selected_action, network_name, options2, msg2)
+        if selected_action.get() == options2[0]:
+            # delete task
+            pass
+    else:
+        # task not available, show options1
+        TaskSchedulerDropdownDialog(root, selected_action, network_name, options1, msg1)
+        missing_admin = False
+        if selected_action.get() == options1[0]:
+            # create task with current network
+            missing_admin = register_task_template()
+        elif selected_action.get() == options1[1]:
+            # create task with given network name
+            missing_admin = register_task_template(network_name.get())
+        if missing_admin:
+            messagebox.showerror("Fehler beim Einrichten von Auto Sync",
+                                 "Auto Sync konnte nicht eingerichtet werden, da keine Administratorberechtigung "
+                                 "erteilt wurde. Diese wird jedoch benötigt, um die Aufgabe in der Aufgabenplanung "
+                                 "zu registrieren")
+        elif not task_available():
+            messagebox.showerror("Fehler beim Einrichten von Auto Sync", "Auto Sync konnte aufgrund eines unbekannten"
+                                                                         "Fehlers nicht eingerichtet werden.")
+        else:
+            messagebox.showinfo("Auto Sync aktiviert", "Auto Sync wurde erfolgreich eingerichtet.")
 
 
 # check for available internet connection
