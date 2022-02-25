@@ -708,7 +708,19 @@ def register_task_template(network_name: str = "") -> bool:
     )
     sleep(2)
 
-    return not (not res.stdout.decode("cp850") or not res.stderr.decode("cp850"))
+    return not (not res.stdout.decode("cp850") and not res.stderr.decode("cp850"))
+
+
+def unregister_task():
+    res = subprocess.run(
+        f"Powershell -Command \"Start-Process -FilePath \'powershell\' -ArgumentList \'-Command \"\"Unregister-ScheduledTask -Confirm:$false -TaskName \'\'LU Sync\'\'\"\"\' -Verb RunAs\"",
+        capture_output=True
+    )
+    sleep(2)
+
+    print(res.stdout)
+    print(res.stderr)
+    return not (not res.stdout.decode("cp850") and not res.stderr.decode("cp850"))
 
 
 def show_task_settings() -> None:
@@ -726,16 +738,26 @@ def show_task_settings() -> None:
     selected_action = StringVar()
     network_name = StringVar()
 
+    missing_admin = False
+
     if task_available():
         # task already available, show options2
         TaskSchedulerDropdownDialog(root, selected_action, network_name, options2, msg2)
         if selected_action.get() == options2[0]:
             # delete task
-            pass
+            missing_admin = unregister_task()
+        if missing_admin:
+            messagebox.showerror("Fehler beim Deaktivieren von Auto Sync",
+                                 "Auto Sync konnte nicht deaktiviert werden, da keine Administratorberechtigung erteilt "
+                                 "wurde. Diese wird jedoch benötigt, um die Aufgabe aus der Aufgabenplanung zu löschen")
+        elif task_available():
+            messagebox.showerror("Fehler beim Deaktivieren von Auto Sync",
+                                 "Auto Sync konnte aufgrund eines unbekannten Fehlers nicht deaktiviert werden.")
+        else:
+            messagebox.showinfo("Auto Sync deaktiviert", "Auto Sync wurde erfolgreich deaktiviert.")
     else:
         # task not available, show options1
         TaskSchedulerDropdownDialog(root, selected_action, network_name, options1, msg1)
-        missing_admin = False
         if selected_action.get() == options1[0]:
             # create task with current network
             missing_admin = register_task_template()
@@ -748,7 +770,7 @@ def show_task_settings() -> None:
                                  "erteilt wurde. Diese wird jedoch benötigt, um die Aufgabe in der Aufgabenplanung "
                                  "zu registrieren")
         elif not task_available():
-            messagebox.showerror("Fehler beim Einrichten von Auto Sync", "Auto Sync konnte aufgrund eines unbekannten"
+            messagebox.showerror("Fehler beim Einrichten von Auto Sync", "Auto Sync konnte aufgrund eines unbekannten "
                                                                          "Fehlers nicht eingerichtet werden.")
         else:
             messagebox.showinfo("Auto Sync aktiviert", "Auto Sync wurde erfolgreich eingerichtet.")

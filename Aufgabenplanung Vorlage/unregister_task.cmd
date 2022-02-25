@@ -1,0 +1,1 @@
+Powershell -Command "Start-Process -FilePath 'powershell' -ArgumentList '-Command ""Unregister-ScheduledTask -Confirm:$false -TaskName ''LU Sync''""' -Verb RunAs"
