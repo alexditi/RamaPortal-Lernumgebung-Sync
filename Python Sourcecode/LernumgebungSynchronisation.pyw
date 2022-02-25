@@ -718,8 +718,6 @@ def unregister_task():
     )
     sleep(2)
 
-    print(res.stdout)
-    print(res.stderr)
     return not (not res.stdout.decode("cp850") and not res.stderr.decode("cp850"))
 
 
