@@ -236,7 +236,7 @@ sync_only_new = BooleanVar(value=TRUE)
 previous_dir = ""
 
 URL = "https://portal.rama-mainz.de"
-VERSION = "v7.0"
+VERSION = "v8.0"
 
 # color constants
 BG_COLOR = "#282828"

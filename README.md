@@ -70,3 +70,12 @@ Wird die Lernumgebung Synchronisation mit dem Argument `-startup` gestartet (zum
 ein Synchronisationsvorgang. Sobald dieser beendet ist, schließt das Programm wieder. Das kann verwendet werden, um
 beispielsweise einen automatischen Synchronisationsvorgang beim PC-Start einzurichten. Das geht beispielsweise über die
 Windows Aufgabenplanung.
+
+## Auto Sync
+
+Das Feature Auto Sync ermöglicht es, dass die Lernumgebung Synchronisation automatisch gestartet wird, wenn man sich am 
+PC anmeldet und eine bestimmte Internetverbindung verfügbar ist (beispielsweise das Heimnetzwerk). So ist die Offline Sync
+automatisch auf dem neuesten Stand. Im Einstellungsmenü kann Auto Sync mit dem Button unten rechts eingerichtet werden.
+Als Internetverbindung, die zur Verfügung stehen muss, damit die Synchronisation gestartet wird, wird standardmäßig die 
+aktuelle Verbindung verwendet, alternativ kann mti der zweiten Option eine bestimmte Verbindung angegeben werden.
+Ist Auto Sync eingerichtet, kann dieses Feature auch über das gleiche Menü deaktiviert werden.
