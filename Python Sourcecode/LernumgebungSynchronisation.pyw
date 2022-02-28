@@ -15,20 +15,20 @@ from time import sleep
 
 class TaskSchedulerBaseException(Exception):
 
-    def __init__(self, error_msg):
-        super().__init__(error_msg)
+    def __init__(self):
+        super().__init__()
 
 
 class MissingAdminRightsError(TaskSchedulerBaseException):
 
     def __init__(self):
-        super().__init__("")
+        super().__init__()
 
 
 class UnknownNetworkError(TaskSchedulerBaseException):
 
     def __init__(self):
-        super().__init__("")
+        super().__init__()
 
 
 # tooltip class
@@ -700,7 +700,7 @@ def register_task_template(network_name: str = "") -> None:
             subprocess.run([f"{tmpdir}/get_guid.bat"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout, features="xml"
         ).find_all(Name="Guid")[0].text
     except IndexError:
-        raise UnknownNetworkError()
+        raise UnknownNetworkError
 
     # get executable path
     if frozen:
@@ -733,10 +733,10 @@ def register_task_template(network_name: str = "") -> None:
     stderr = res.stderr.decode("cp850")
 
     if not (not stdout and not stderr):
-        if stderr.find("Der Vorgang wurde durch den Benutzer abgebrochen") != -1:
-            raise MissingAdminRightsError()
+        if stderr.find("Der Vorgang wurde durch den") != -1 and stderr.find("Benutzer abgebrochen"):
+            raise MissingAdminRightsError
         else:
-            raise TaskSchedulerBaseException("Unexpected Error while creating the task")
+            raise TaskSchedulerBaseException
 
 
 def unregister_task():
@@ -750,10 +750,10 @@ def unregister_task():
     stderr = res.stderr.decode("cp850")
 
     if not (not stdout and not stderr):
-        if stderr.find("Der Vorgang wurde durch den Benutzer abgebrochen") != -1:
-            raise MissingAdminRightsError()
+        if stderr.find("Der Vorgang wurde durch den") != -1 and stderr.find("Benutzer abgebrochen"):
+            raise MissingAdminRightsError
         else:
-            raise TaskSchedulerBaseException("Unexpected Error while deleting the task")
+            raise TaskSchedulerBaseException
 
 
 def show_task_settings() -> None:
@@ -774,28 +774,47 @@ def show_task_settings() -> None:
     if task_available():
         # task already available, show options2
         TaskSchedulerDropdownDialog(root, selected_action, network_name, options2, msg2)
-        if selected_action.get() == options2[0]:
-            # delete task
-            try:
+        try:
+            if selected_action.get() == options2[0]:
+                # delete task
                 unregister_task()
-                messagebox.showinfo()
-            except MissingAdminRightsError as e:
-                pass
-            except TaskSchedulerBaseException as e:
-                pass
-        else:
-            return
+            else:
+                return
+            messagebox.showinfo("Auto Sync deaktiviert", "Auto Sync wurde erfolgreich deaktiviert.")
+        except MissingAdminRightsError:
+            messagebox.showerror("Fehler beim Deaktivieren von Auto Sync",
+                                 "Auto Sync konnte nicht deaktiviert werden, da keine Administratorberechtigung "
+                                 "erteilt wurde. Diese wird jedoch benötigt, um die Aufgabe aus der Aufgabenplanung "
+                                 "zu löschen.")
+        except TaskSchedulerBaseException:
+            messagebox.showerror("Fehler beim Deaktivieren von Auto Sync",
+                                 "Auto Sync konnte aufgrund eines unbekannten Fehlers nicht deaktiviert werden.")
     else:
         # task not available, show options1
         TaskSchedulerDropdownDialog(root, selected_action, network_name, options1, msg1)
-        if selected_action.get() == options1[0]:
-            # create task with current network
-            register_task_template()
-        elif selected_action.get() == options1[1]:
-            # create task with given network name
-            register_task_template(network_name.get())
-        else:
-            return
+        try:
+            if selected_action.get() == options1[0]:
+                # create task with current network
+                register_task_template()
+            elif selected_action.get() == options1[1]:
+                # create task with given network name
+                register_task_template(network_name.get())
+            else:
+                return
+            messagebox.showinfo("Auto Sync aktiviert", "Auto Sync wurde erfolgreich eingerichtet.")
+        except MissingAdminRightsError:
+            messagebox.showerror("Fehler beim Einrichten von Auto Sync",
+                                 "Auto Sync konnte nicht eingerichtet werden, da keine Administratorberechtigung "
+                                 "erteilt wurde. Diese wird jedoch benötigt, um die Aufgabe in der Aufgabenplanung "
+                                 "zu registrieren.")
+        except UnknownNetworkError:
+            messagebox.showerror("Fehler beim einrichten von Auto Sync",
+                                 "Auto Sync konnte nicht eingerichtet werden, das das angegebene Netzwerk nicht erkannt "
+                                 "wurde. Bitte die Rechtschreibung überprüfen oder mit dem Netzwerk verbinden, um die "
+                                 "Einrichtung zu starten.")
+        except TaskSchedulerBaseException:
+            messagebox.showerror("Fehler beim Einrichten von Auto Sync", "Auto Sync konnte aufgrund eines unbekannten "
+                                                                         "Fehlers nicht eingerichtet werden.")
 
 
 # check for available internet connection
