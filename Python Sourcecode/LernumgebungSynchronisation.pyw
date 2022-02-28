@@ -614,7 +614,7 @@ def syncLU() -> None:
 
 
 def task_available() -> bool:
-    res = subprocess.run('powershell -Command "Get-ScheduledTask -TaskName \'LU Sync\'"', capture_output=True)
+    res = subprocess.run('powershell -Command "Get-ScheduledTask -TaskName \'LU Sync\'"', capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
     return res.stdout.decode("cp850").find("Ready") != -1 and not res.stderr.decode("cp850")
 
 
@@ -640,7 +640,7 @@ def register_task_template(network_name: str = "") -> bool:
     # get user sid
     user_sid = "".join(
         c for c in
-        subprocess.run(["wmic", "useraccount", "where", f"name='{username}'", "get", "sid"], capture_output=True, text=True).stdout
+        subprocess.run(["wmic", "useraccount", "where", f"name='{username}'", "get", "sid"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout
         if unicodedata.category(c)[0] != "C" and c != " "
     ).replace("SID", "")
 
@@ -653,14 +653,14 @@ def register_task_template(network_name: str = "") -> bool:
         default_ipv4_index = "".join(
             c for c in
             subprocess.run('powershell -Command "Get-NetRoute -DestinationPrefix 0.0.0.0/0|Sort-Object {$_.RouteMetric+(Get-NetIPInterface -AssociatedRoute $_).InterfaceMetric}|Select-Object -First 1 -ExpandProperty InterfaceIndex"',
-                           capture_output=True, text=True).stdout
+                           capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout
             if unicodedata.category(c)[0] != "C" and c != " "
         )
         # get the name of the given network interface
         network_name = "".join(
             c for c in
             subprocess.run(f'powershell -Command "(Get-NetConnectionProfile -InterfaceIndex {default_ipv4_index}).Name"',
-                           capture_output=True, text=True).stdout
+                           capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout
             if unicodedata.category(c)[0] != "C"
         )
 
@@ -678,7 +678,7 @@ def register_task_template(network_name: str = "") -> bool:
         )
     # execute script and parse xml output
     network_guid = BeautifulSoup(
-        subprocess.run([f"{tmpdir}/get_guid.bat"], capture_output=True, text=True).stdout, features="xml"
+        subprocess.run([f"{tmpdir}/get_guid.bat"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout, features="xml"
     ).find_all(Name="Guid")[0].text
 
     # get executable path
@@ -704,7 +704,7 @@ def register_task_template(network_name: str = "") -> bool:
     # register task
     res = subprocess.run(
         f"Powershell -Command \"Start-Process -FilePath \'powershell\' -ArgumentList \'-Command \"\"Register-ScheduledTask -TaskName \'\'LU Sync\'\' -Xml (Get-Content \'\'{tmpdir}\\LU Sync.xml\'\' | Out-String)\"\"\' -Verb RunAs\"",
-        capture_output=True
+        capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW
     )
     sleep(2)
 
@@ -714,7 +714,7 @@ def register_task_template(network_name: str = "") -> bool:
 def unregister_task():
     res = subprocess.run(
         f"Powershell -Command \"Start-Process -FilePath \'powershell\' -ArgumentList \'-Command \"\"Unregister-ScheduledTask -Confirm:$false -TaskName \'\'LU Sync\'\'\"\"\' -Verb RunAs\"",
-        capture_output=True
+        capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW
     )
     sleep(2)
 
