@@ -631,6 +631,10 @@ def syncLU() -> None:
     sync_new_cb.config(state=NORMAL)
 
 
+def sync_studpool():
+    sections = BeautifulSoup(s.get(f"{URL}/studpool.php").text, features="html.parser")
+
+
 def task_available() -> bool:
     res = subprocess.run('powershell -Command "Get-ScheduledTask -TaskName \'LU Sync\'"', capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
     return res.stdout.decode("cp850").find("Ready") != -1 and not res.stderr.decode("cp850")
@@ -921,5 +925,5 @@ else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != VERSION and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         launch_updater()
-
+sync_studpool()
 root.mainloop()
