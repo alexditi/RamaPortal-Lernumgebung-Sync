@@ -632,7 +632,27 @@ def syncLU() -> None:
 
 
 def sync_studpool():
-    sections = BeautifulSoup(s.get(f"{URL}/studpool.php").text, features="html.parser")
+    mk_dir(f"{LU_dir}/Materialien für Schüler")
+
+    # iterate sections
+    for section in BeautifulSoup(s.get(f"{URL}/studpool.php").text, features="html.parser").find(class_="accordion").find_all("section"):
+        # get id name for current section
+        section_id = section.h2.a.attrs.get("href")
+        # mkdir for top folder
+        section_path = f"{LU_dir}/Materialien für Schüler/{section.h2.a.text}"
+        mk_dir(section_path)
+
+        # iterate files in section
+        for file in section.div.table.find_all("tr"):
+            # get file id
+            file_id = file.td.a.attrs.get("href").replace('javascript:submdwnl("', "").replace('","dwnl")', "")
+            # get file name
+            file_name = file.td.a.text.lstrip()
+
+            # download and save file
+            file_content = s.post(f"{URL}/studpool.php{section_id}", {"downfile": file_id, "download": "dwnl"}).content
+            with open(f"{section_path}/{file_name}", "wb+") as content_file:
+                content_file.write(file_content)
 
 
 def task_available() -> bool:
@@ -925,5 +945,5 @@ else:
     updateLog = json.loads(v.text)
     if updateLog.get("version") != VERSION and messagebox.askyesno("Update verfügbar", "Die Version " + updateLog.get("version") + " ist nun verfügbar. Jetzt herunterladen?"):
         launch_updater()
-sync_studpool()
+
 root.mainloop()
