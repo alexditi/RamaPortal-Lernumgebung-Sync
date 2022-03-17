@@ -237,7 +237,7 @@ do_sync_studpool = BooleanVar(value=False)
 previous_dir = ""
 
 URL = "https://portal.rama-mainz.de"
-VERSION = "v8.0"
+VERSION = "v8.1"
 
 # color constants
 BG_COLOR = "#282828"

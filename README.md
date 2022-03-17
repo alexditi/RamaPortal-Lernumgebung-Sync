@@ -32,8 +32,9 @@ Vorhandensein einer Datei überprüft wird. Will man also alle Dateien auch aktu
 werden. Die zweite Checkbox "Ordner vor Update löschen" löscht den gesamten LU Sync Ordner vor dem Herunterladen, sodass
 überschüssige Dateien, die in der Lernumgebung schon gelöscht wurden, auch offline gelöscht werden. Dabei werden aber
 **alle** Dateien in dem Ordner gelöscht. Diese beiden etwas umständlichen Optionen zum Aufräumen der Dateien sind aber
-notwendig, da die Lernumgebung nicht als Cloud System ausgelegt ist zu Offline Synchronisation und daher kein Version
-Log besitzt, in dem Änderungen von Dateien gespeichert werden.
+notwendig, da die Lernumgebung nicht als Cloud System ausgelegt ist zu Offline Synchronisation und daher kein Version-Log
+besitzt, in dem Änderungen von Dateien gespeichert werden. Mit dem Button "Materialien für Schüler herunterladen" können
+die Dateien unter der Kachel "Materialien für Schüler" aus dem Rama-Portal heruntergeladen werden.
 
 ### Einstellungsmenü
 
@@ -75,7 +76,7 @@ Windows Aufgabenplanung.
 
 Das Feature Auto Sync ermöglicht es, dass die Lernumgebung Synchronisation automatisch gestartet wird, wenn man sich am 
 PC anmeldet und eine bestimmte Internetverbindung verfügbar ist (beispielsweise das Heimnetzwerk). So ist die Offline Sync
-automatisch auf dem neuesten Stand. Im Einstellungsmenü kann Auto Sync mit dem Button unten rechts eingerichtet werden.
+automatisch auf dem neuesten Stand. Im Einstellungsmenü kann Auto Sync eingerichtet werden.
 Als Internetverbindung, die zur Verfügung stehen muss, damit die Synchronisation gestartet wird, wird standardmäßig die 
 aktuelle Verbindung verwendet, alternativ kann mti der zweiten Option eine bestimmte Verbindung angegeben werden.
 Ist Auto Sync eingerichtet, kann dieses Feature auch über das gleiche Menü deaktiviert werden.
