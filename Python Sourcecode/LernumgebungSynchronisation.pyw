@@ -213,8 +213,8 @@ frozen = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 # initialize Tkinter root
 root = Tk()
 root.wm_title("LU Synchronisation")
-root.wm_minsize(300, 330)
-root.wm_maxsize(300, 330)
+root.wm_minsize(300, 370)
+root.wm_maxsize(300, 370)
 root.withdraw()
 
 # get icon file and apply it to the root window
@@ -233,6 +233,7 @@ LU_dir = ""
 show_password = False
 delete_before_sync = BooleanVar()
 sync_only_new = BooleanVar(value=TRUE)
+do_sync_studpool = BooleanVar(value=False)
 previous_dir = ""
 
 URL = "https://portal.rama-mainz.de"
@@ -474,7 +475,7 @@ def download_file(file: dict, dir_string: str) -> None:
     else:
         ext = "." + ext
 
-    if sync_only_new.get() and os.path.exists(dir_string + "/" + file.get("name") + ext):
+    if sync_only_new.get() and os.path.exists(f"{dir_string}/{file.get('name')}{ext}"):
         return
 
     global error_log
@@ -530,6 +531,7 @@ def syncLU() -> None:
     sync_btn.config(state=DISABLED)
     delete_cb.config(state=DISABLED)
     sync_new_cb.config(state=DISABLED)
+    studpool_cb.config(state=DISABLED)
 
     if delete_before_sync.get() and messagebox.askyesno("Ordner löschen?", 'Es werden alle Ordner für Fächer der LU komplett gelöscht, auch eigene Dateien in diesen Ordnern!'):
         try:
@@ -611,6 +613,14 @@ def syncLU() -> None:
     except Exception as ex:
         error_log.append(("Anderweitige Fehlermeldung: ", ex, str(ex.__traceback__)))
 
+    if do_sync_studpool.get():
+        try:
+            info_label.config(text="Materialien für Schüler herunterladen...")
+            root.update()
+            sync_studpool()
+        except Exception as ex:
+            error_log.append(("Fehlermeldung Studpool Sync: ", ex, str(ex.__traceback__)))
+
     # delete error_log.txt if present (from previous versions) and only create the file if any errors occurred
     print("Finished with", len(error_log), "errors")
     if os.path.exists(f"{LU_dir}/ErrorLog.txt"):
@@ -619,7 +629,7 @@ def syncLU() -> None:
         with open(f"{LU_dir}/ErrorLog.txt", "w+") as error_log_file:
             error_log_file.write("\n".join([str(error) for error in error_log]))
 
-    # show final message an release buttons
+    # show final message and release buttons
     progress_label.config(text="Fertig!")
     e_msg = "Synchronisation erfolgreich abgeschlossen."
     if len(error_log) > 0:
@@ -629,17 +639,23 @@ def syncLU() -> None:
     sync_btn.config(state=NORMAL)
     delete_cb.config(state=NORMAL)
     sync_new_cb.config(state=NORMAL)
+    studpool_cb.config(state=NORMAL)
 
 
 def sync_studpool():
     mk_dir(f"{LU_dir}/Materialien für Schüler")
 
     # iterate sections
-    for section in BeautifulSoup(s.get(f"{URL}/studpool.php").text, features="html.parser").find(class_="accordion").find_all("section"):
-        # get id name for current section
+    sections = BeautifulSoup(s.get(f"{URL}/studpool.php").text, features="html.parser").find(class_="accordion").find_all("section")
+    for section in sections:
+        # get id and name for current section
         section_id = section.h2.a.attrs.get("href")
+        section_name = section.h2.a.text
+        # update info label
+        progress_label.config(text=f"{section_id[1:]} ({sections.index(section)}/{len(sections)})")
+        root.update()
         # mkdir for top folder
-        section_path = f"{LU_dir}/Materialien für Schüler/{section.h2.a.text}"
+        section_path = f"{LU_dir}/Materialien für Schüler/{section_name}"
         mk_dir(section_path)
 
         # iterate files in section
@@ -648,11 +664,14 @@ def sync_studpool():
             file_id = file.td.a.attrs.get("href").replace('javascript:submdwnl("', "").replace('","dwnl")', "")
             # get file name
             file_name = file.td.a.text.lstrip()
+            info_label.config(text=file_name)
+            root.update()
 
             # download and save file
-            file_content = s.post(f"{URL}/studpool.php{section_id}", {"downfile": file_id, "download": "dwnl"}).content
-            with open(f"{section_path}/{file_name}", "wb+") as content_file:
-                content_file.write(file_content)
+            if not (sync_only_new.get() and os.path.exists(f"{section_path}/{file_name}")):
+                file_content = s.post(f"{URL}/studpool.php{section_id}", {"downfile": file_id, "download": "dwnl"}).content
+                with open(f"{section_path}/{file_name}", "wb+") as content_file:
+                    content_file.write(file_content)
 
 
 def task_available() -> bool:
@@ -870,7 +889,12 @@ sync_new_cb = Checkbutton(cb_frame1, bg=BG_COLOR, activebackground=BG_COLOR, var
 sync_new_cb.pack(side=LEFT, anchor=S)
 Label(cb_frame1, text="Nur neue Dateien synchronisieren", font="Helvetia 12", fg=FONT_COLOR, bg=BG_COLOR).pack(side=RIGHT, fill=Y)
 cb_frame1.pack(pady=5, padx=8, anchor=W, side=TOP)
-sync_frame = Frame(main_frame, bg=RAMA_COLOR, width=250, height=150)
+cb_frame2 = Frame(main_frame)
+studpool_cb = Checkbutton(cb_frame2, bg=BG_COLOR, activebackground=BG_COLOR, variable=do_sync_studpool)
+studpool_cb.pack(side=LEFT)
+Label(cb_frame2, text="Materialien für Schüler herunterladen", font="Helvetia 12", fg=FONT_COLOR, bg=BG_COLOR).pack(side=RIGHT, fill=Y)
+cb_frame2.pack(pady=5, padx=8, anchor=W, side=TOP)
+sync_frame = Frame(main_frame, bg=BG_COLOR, width=250, height=150)
 sync_frame.pack_propagate(False)
 progress_label = Label(sync_frame, bg=BG_COLOR, fg=FONT_COLOR, font="Helvetia 14 bold", text="")
 progress_label.pack(fill=X)
@@ -900,8 +924,8 @@ browse_btn.pack(side=RIGHT)
 dir_entry.pack(fill=X, side=LEFT)
 dir_frame.pack(fill=X, anchor=N, padx=8)
 Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=RAMA_COLOR, activebackground=RAMA_COLOR_ACTIVE, text="Speichern", font="Helvetia 16 bold", relief=FLAT, command=submit_settings).pack(fill=X, anchor=N, padx=30, pady=10)
-Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=BG_COLOR, activebackground=BG_COLOR, text=VERSION, font="Helvetia 10 bold", relief=FLAT, command=launch_updater).pack(side=LEFT, pady=2, padx=2)
-Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=BG_COLOR, activebackground=BG_COLOR, text="Auto Sync einrichten", font="Helvetia 10 bold", relief=FLAT, command=show_task_settings).pack(side=RIGHT, pady=2, padx=2)
+Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=RAMA_COLOR, activebackground=RAMA_COLOR_ACTIVE, text="Auto Sync einrichten", font="Helvetia 10 bold", relief=FLAT, command=show_task_settings).pack(fill=X, anchor=N, padx=30)
+Button(userdata_frame, fg=FONT_COLOR, activeforeground=FONT_COLOR, bg=BG_COLOR, activebackground=BG_COLOR, text=VERSION, font="Helvetia 10 bold", relief=FLAT, command=launch_updater).pack(side=LEFT, anchor=S, pady=2, padx=2)
 username_entry.bind("<Return>", submit_settings)
 password_entry.bind("<Return>", submit_settings)
 dir_entry.bind("Return", submit_settings)
